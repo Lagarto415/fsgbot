@@ -220,7 +220,7 @@ else if (commandName === 'unban') {
 client.on('messageCreate', async message => {
   if (message.content === '!ping') {
       // Reply with "Pong!"
-      message.reply('Pong!');
+      message.reply({content: 'Pong!', ephemeral: true});
   }
 });
 
