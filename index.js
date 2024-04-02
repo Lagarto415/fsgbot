@@ -1,5 +1,5 @@
 import pkg from 'discord.js';
-const { Client, IntentsBitField, MessageActionRow, MessageSelectMenu } = pkg;
+const { Client, IntentsBitField, PermissionsBitField } = pkg;
 
 const client = new Client({
     intents: [
@@ -10,101 +10,219 @@ const client = new Client({
     ],
 })
 
-// client.on("messageCreate", async (message) => {
-//     if (!message?.author.bot) {
-//         message.author.send(`Echo ${message.content}`)
-//     }
-// })
 let welcomeChannel;
 let rulesChannel;
 let driverApplicationsChannel;
+let goodbyeChannel;
+let modlog;
+
+let testmode = false;
 
 client.once('ready', () => {
     console.log('Bot is ready!');
     
     // Fetch the guild once the bot is ready
-    const guild = client.guilds.cache.first(); // Assuming the bot is only in one guild
+    const guild = client.guilds.cache.get('1132692146047176804'); // Assuming the bot is only in one guild
 
-    // Find the channels
-    welcomeChannel = guild.channels.cache.find(channel => channel.name === 'willkommen');
-    rulesChannel = guild.channels.cache.find(channel => channel.name === 'rules');
-    driverApplicationsChannel = guild.channels.cache.find(channel => channel.name === 'fahrerbewerbungen');
-});
+
+    if (guild) {
+      welcomeChannel = guild.channels.cache.find(channel => channel.id === '1222236153369854064');
+      rulesChannel = guild.channels.cache.find(channel => channel.id === '1182415636564025405');
+      driverApplicationsChannel = guild.channels.cache.find(channel => channel.id === '1136539655580426241');
+      goodbyeChannel = guild.channels.cache.find(channel => channel.id === '1224458292479393872');
+      modlog = guild.channels.cache.find(channel => channel.id === '1145115156360200214');
+  } else {
+      console.error('Guild not found.');
+  }
+
+    const createCommand = async (commandData) => {
+      try {
+        await client.application?.commands.create(commandData);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    
+    const commands = [
+      {
+        name: 'kick',
+        description: 'Kicks a user from the server',
+        options: [
+          {
+            name: 'user',
+            type: 6,
+            description: 'The user to kick',
+            required: true
+          },
+          {
+            name: 'reason',
+            type: 3,
+            description: 'The reason for the kick',
+            required: false
+          }
+        ]
+      },
+      {
+        name: 'ban',
+        description: 'Bans a user from the server',
+        options: [
+          {
+            name: 'user',
+            type: 6,
+            description: 'The user to ban',
+            required: true
+          },
+          {
+            name: 'reason',
+            type: 3,
+            description: 'The reason for the ban',
+            required: false
+          }
+        ]
+      },
+      {
+        name: 'unban',
+        description: 'Unbans a user from the server',
+        options: [
+          {
+            name: 'user',
+            type: 6,
+            description: 'The user to unban',
+            required: true
+          }
+        ]
+      }
+    ];
+    commands.forEach(createCommand);
+  }
+);
 
 //Join Embedd
 client.on('guildMemberAdd', member => {
+  const user = member.user.username;
+  const embed = {
+      color: 0x0099ff,
+      title: `Willkommen in der F1-Simracing GER Liga, ${user}!`,
+      timestamp: new Date(),
+      image: {
+          url: member.displayAvatarURL({ format: 'png', dynamic: false, size: 512 }), // User's profile picture URL
+      }
+  };
+
+  if (rulesChannel && driverApplicationsChannel) {
+      embed.description = `Bitte lies dir bei <#${rulesChannel.id}> die Regeln durch und bewirb dich als Fahrer bei <#${driverApplicationsChannel.id}>`;
+      welcomeChannel.send({ embeds: [embed] })
+          .catch(error => console.error('Error sending welcome message:', error));
+  } else {
+      console.error('Rules channel or driver applications channel not found.');
+  }
+});
+
+
+//Leave Embed
+client.on('guildMemberRemove', member => {
     const user = member.user.username;
     const embed = {
         color: 0x0099ff,
-        title: `Willkommen in der F1-Simracing GER Liga, ${user}!`,
-        description: `Bitte lies dir bei <#${rulesChannel.id}> die Regeln durch und bewirb dich als Fahrer bei <#${driverApplicationsChannel.id}>`,
+        title: ` ${user} hat die F1-Simracing GER Liga verlassen:`,
         timestamp: new Date(),
         image: {
-            url: member.displayAvatarURL({ format: 'png', dynamic: true, size: 1024 }), // User's profile picture URL
+            url: member.displayAvatarURL({ format: 'png', dynamic: false, size: 512 }), // User's profile picture URL
         }
     }
+    if (goodbyeChannel){
+        goodbyeChannel.send({ embeds: [embed] });
+    } else {
+        console.error('Goodbye channel not found.');
+    }
+})
 
-    welcomeChannel.send({ embeds: [embed] });
-});
+//Kick Command
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isCommand()) return;
 
-//Application Form
-client.on('messageCreate', async message => {
-    const questions = [
-      "Name",
-      "Lenkrad oder Controller",
-      "KI Stärke",
-      "Wunsch-Fahrernummer",
-      "Wunschteam",
-      "EA-ID"
-    ];
-  
-    let answers = [];
-    if (message.content === '!startform') {
-      await message.reply("Lass uns mit der Bewerbung beginnen");
-  
-      for (const question of questions) {
-        const options = [ // Define options for each question
-          {
-            label: "Option 1",
-            value: "option1_value"
-          },
-          {
-            label: "Option 2",
-            value: "option2_value"
-          },
-          // Add more options as needed
-        ];
-  
-        const selectMenu = new MessageSelectMenu()
-          .setCustomId('select_option')
-          .setPlaceholder(question) // Placeholder text before selection
-          .setOptions(options);
-  
-        const row = new MessageActionRow().addComponents(selectMenu);
-  
-        await message.channel.send({ content: question, components: [row] });
+  const { commandName, options, user } = interaction; // Access the user property
+
+  if (commandName === 'kick') {
+      const targetUser = options.getUser('user');
+      const reason = options.getString('reason') || 'No reason provided';
+      
+      if (!interaction.member.permissions.has('KICK_MEMBERS')) {
+          return await interaction.reply({ content: 'Du darfst diesen Befehl nicht nutzen', ephemeral: true });
       }
-  
-      const filter = i => i.user.id === message.author.id;
-      const collector = message.channel.createMessageComponentCollector({ filter, time: 60000 });
-  
-      collector.on('collect', async interaction => {
-        answers.push(interaction.values[0]); // Store the selected value
-        await interaction.update({ content: `You selected: ${interaction.values[0]}`, components: [] });
-      });
-  
-      collector.on('end', collected => {
-        if (collected.size === 0) {
-          message.channel.send('No response received.');
-        }
-      });
-        
 
-        message.channel.send("Thank you for completing the form! Here are your responses:");
-        for (let i = 0; i < questions.length; i++) {
-            message.channel.send(`${questions[i]}: ${answers[i]}`);
-        }
+      const memberToKick = interaction.guild.members.cache.get(targetUser.id);
+      if (!memberToKick) {
+          return await interaction.reply({ content: 'User kann nicht gekickt werden', ephemeral: true });
+      }
+
+      const embed = {
+          color: 0xff0000,
+          title: `${targetUser.tag} wurde gekickt`, // Use targetUser.tag instead of just user
+          description: `Von: ${user.tag}\nGrund: ${options.getString('reason')}`, // Include the user who used the command
+          timestamp: new Date()
+      };
+
+      await memberToKick.kick(reason);
+      await interaction.reply({ content: `${targetUser.tag} wurde gekickt.`, ephemeral: true }); // Send an ephemeral reply to the user
+      await modlog.send({ embeds: [embed] });
+  }
+  else if (commandName === 'ban') {
+    const targetUser = options.getUser('user');
+    const reason = options.getString('reason') || 'No reason provided';
+    
+    if (!interaction.member.permissions.has('BAN_MEMBERS')) {
+        return await interaction.reply({ content: 'Du darfst diesen Befehl nicht nutzen', ephemeral: true });
     }
+
+    const memberToBan = interaction.guild.members.cache.get(targetUser.id);
+    if (!memberToBan) {
+        return await interaction.reply({ content: 'User kann nicht gebannt werden', ephemeral: true });
+    }
+
+    const embed = {
+        color: 0xff0000,
+        title: `${targetUser.tag} wurde gebannt`, // Use targetUser.tag instead of just user
+        description: `Von: ${user.tag}\nGrund: ${options.getString('reason')}`, // Include the user who used the command
+        timestamp: new Date()
+    };
+
+    await memberToBan.ban({ reason });
+    await interaction.reply({ content: `${targetUser.tag} wurde gebannt.`, ephemeral: true }); // Send an ephemeral reply to the user
+    await modlog.send({ embeds: [embed] });
+}
+else if (commandName === 'unban') {
+  // Check if the user has permission to unban members
+  if (!interaction.member.permissions.has('BAN_MEMBERS')) {
+    return await interaction.reply({ content: 'You do not have permission to unban members.', ephemeral: true });
+  }
+
+  // Get the user to unban
+  const targetUser = options.getUser('user');
+  if (!targetUser) {
+    return await interaction.reply({ content: 'Please provide a valid user to unban.', ephemeral: true });
+  }
+
+  // Unban the user
+  try {
+    await interaction.guild.bans.remove(targetUser.id, options.getString('reason') || 'No reason provided');
+  } catch (error) {
+    console.error('Error unbanning user:', error);
+    await interaction.reply({ content: 'An error occurred while unbanning the user.', ephemeral: true });
+  }
+  const embed = {
+    color: 0xff0000,
+    title: `${targetUser.tag} wurde entbannt`, // Use targetUser.tag instead of just user
+    description: `Von: ${user.tag}\nGrund: ${options.getString('reason')}`, // Include the user who used the command
+    timestamp: new Date()
+};
+
+await interaction.reply({ content: `${targetUser.tag} wurde entbannt.`, ephemeral: true });
+await modlog.send({ embeds: [embed] });
+}
 });
 
-client.login("MTIyNDM4OTY5MDUxMDI3ODY5Ng.GHdwCI.CE4xzFblxTjIWqkZQFSDof4BhU1baxIqXQRIHU")
+const finishedToken = "MTIyNDM4OTY5MDUxMDI3ODY5Ng.GHdwCI.CE4xzFblxTjIWqkZQFSDof4BhU1baxIqXQRIHU";
+const testToken = "MTIyNDczNDkwNjgxMTQxNjc0OA.GxYLkO.NuRXA_JGGBRtkxRKpjyC9KGaCgeF-9BGezaFOg"
+
+client.login((testmode ? testToken : finishedToken));
