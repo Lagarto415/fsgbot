@@ -217,12 +217,19 @@ else if (commandName === 'unban') {
     timestamp: new Date()
 };
 
+client.on('messageCreate', async message => {
+  if (message.content === '!ping') {
+      // Reply with "Pong!"
+      message.reply('Pong!');
+  }
+});
+
 await interaction.reply({ content: `${targetUser.tag} wurde entbannt.`, ephemeral: true });
 await modlog.send({ embeds: [embed] });
 }
 });
 
-const finishedToken = "MTIyNDM4OTY5MDUxMDI3ODY5Ng.GHdwCI.CE4xzFblxTjIWqkZQFSDof4BhU1baxIqXQRIHU";
+const finishedToken = "MTIyNDM4OTY5MDUxMDI3ODY5Ng.GYuLSh.K8zjBHnllvFDvsj9LJWQJZyFlseBe0ICBNzXT8";
 const testToken = "MTIyNDczNDkwNjgxMTQxNjc0OA.GxYLkO.NuRXA_JGGBRtkxRKpjyC9KGaCgeF-9BGezaFOg"
 
 client.login((testmode ? testToken : finishedToken));
