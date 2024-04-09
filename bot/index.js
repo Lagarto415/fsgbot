@@ -1,6 +1,8 @@
 import pkg from 'discord.js';
 const { Client, IntentsBitField } = pkg;
 import axios from 'axios';
+import fs from 'fs/promises';
+import { response } from 'express';
 
 const client = new Client({
     intents: [
@@ -10,8 +12,6 @@ const client = new Client({
         IntentsBitField.Flags.GuildMembers
     ],
 })
-
-const ttvChannels = ["f1_simracing_ger", "mrunkn0wn3000"];
 
 let ttvTextChannel;
 let welcomeChannel;
@@ -101,7 +101,7 @@ client.once('ready', () => {
   });
 
 let previousStreamStatus = {}; // Object to store previous stream statuses
-
+const ttvChannels = ["f1_simracing_ger"];
 async function checkTtvStatus() {
   for (const channel of ttvChannels) {
     try {
@@ -121,7 +121,7 @@ async function checkTtvStatus() {
           const stream = response.data.data[0].user_name;
           const embed = {
             color: 0x00a31b,
-            title: `:red_circle: ${stream} ist jetzt live! :red_circle:`,
+            title: `:red_circle: ${stream} ist jetzt live! :red_circle:  @everyone`,
             description: response.data.data[0].title + '\n' +` https://twitch.tv/${stream}`,
             timestamp: new Date(),
             image: {
@@ -141,6 +141,85 @@ async function checkTtvStatus() {
     }
   }
 }
+checkTtvStatus();
+setInterval(checkTtvStatus, 15000);
+
+const storageFilePath = './latestVideoIds.json';
+
+async function loadLatestVideoIds() {
+  try {
+      const data = await fs.readFile(storageFilePath);
+      latestVideoIds = JSON.parse(data);
+  } catch (error) {
+      console.error('Error loading latest video IDs:', error);
+  }
+}
+
+async function saveLatestVideoIds() {
+  try {
+      await fs.writeFile(storageFilePath, JSON.stringify(latestVideoIds, null, 2));
+  } catch (error) {
+      console.error('Error saving latest video IDs:', error);
+  }
+}
+
+const ytChannels = ['UCC84JzpzGMObPZcsB0Ywu5g'];
+const API_KEY = 'AIzaSyBObApGkmUHzi57qjPsRRPpw4YvLFYGH4c';
+
+// Object to store the latest video ID for each channel
+let latestVideoIds = {};
+
+async function checkYT() {
+  for (const channel of ytChannels){
+    try {
+      const response = await axios.get(`https://www.googleapis.com/youtube/v3/search`, {
+        params: {
+          key: API_KEY,
+          channelId: channel,
+          part: 'snippet',
+          order: 'date',
+          type: 'video'
+        }
+      });
+      console.log("Connected to YouTube")
+  
+      const videos = response.data.items;
+      if (videos.length > 0) {
+        const latestVideo = videos[0];
+        const videoId = latestVideo.id.videoId;
+  
+        // Check if the latest video ID is different from the stored one
+        if (latestVideoIds[channel] !== videoId) {
+          latestVideoIds[channel] = videoId;
+          
+          const videoTitle = latestVideo.snippet.title;
+          const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+          const embed = {
+            color: 0x00a31b,
+            title: `:arrow_forward:: Ein neues YouTube Video ist online! :arrow_backward:`,
+            description: videoTitle + '\n' + videoUrl,
+            timestamp: new Date(),
+            image: {
+                url: 'https://media.discordapp.net/attachments/1224731046097059853/1224733171770462259/IMG_0923.jpg?ex=661e90a6&is=660c1ba6&hm=c473e8806c40907d49d075cc07e38fdfab742353c90e76c1865831fe0f06a06b&=&format=webp&width=853&height=905', // User's profile picture URL
+            }};
+          ttvTextChannel.send({ embeds: [embed] });
+  
+          // Send notification to Discord server or perform any other action
+          console.log(`New video uploaded: ${videoTitle}\n${videoUrl}`);
+        }
+      }
+    } catch (error) {
+      console.log(response.data)
+      console.error('Error fetching new videos:', error);
+    }
+  }
+
+  await saveLatestVideoIds();
+}
+
+loadLatestVideoIds();
+setInterval(checkYT,10 * 60 * 1000);
 
 //Join Embedd
 client.on('guildMemberAdd', member => {
