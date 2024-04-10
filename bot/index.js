@@ -21,6 +21,8 @@ let goodbyeChannel;
 let modlog;
 let numberchannel;
 
+let bewerberRole;
+
 client.once('ready', () => {
     console.log('Bot is ready!');
     
@@ -35,6 +37,7 @@ client.once('ready', () => {
       goodbyeChannel = guild.channels.cache.find(channel => channel.id === '1224458292479393872');
       modlog = guild.channels.cache.find(channel => channel.id === '1145115156360200214');
       ttvTextChannel = guild.channels.cache.find(channel => channel.id === '1145413393122066482');
+      bewerberRole = guild.roles.cache.find(role => role.id === '1145125128724815912');
   } else {
       console.error('Guild not found.');
   }
@@ -121,8 +124,8 @@ async function checkTtvStatus() {
           const stream = response.data.data[0].user_name;
           const embed = {
             color: 0x00a31b,
-            title: `:red_circle: ${stream} ist jetzt live! :red_circle:  @everyone`,
-            description: response.data.data[0].title + '\n' +` https://twitch.tv/${stream}`,
+            title: `:red_circle: ${stream} ist jetzt live! :red_circle:`,
+            description: response.data.data[0].title + '\n' +` https://twitch.tv/${stream}    @everyone`,
             timestamp: new Date(),
             image: {
                 url: 'https://media.discordapp.net/attachments/1224731046097059853/1224733171770462259/IMG_0923.jpg?ex=661e90a6&is=660c1ba6&hm=c473e8806c40907d49d075cc07e38fdfab742353c90e76c1865831fe0f06a06b&=&format=webp&width=853&height=905', // User's profile picture URL
@@ -234,6 +237,7 @@ client.on('guildMemberAdd', member => {
   };
 
   if (rulesChannel && driverApplicationsChannel) {
+      member.roles.add(bewerberRole);
       embed.description = `Bitte lies dir bei <#${rulesChannel.id}> die Regeln durch und bewirb dich als Fahrer bei <#${driverApplicationsChannel.id}>`;
       welcomeChannel.send({ embeds: [embed] })
           .catch(error => console.error('Error sending welcome message:', error));
