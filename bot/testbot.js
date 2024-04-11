@@ -347,16 +347,35 @@ await modlog.send({ embeds: [embed] });
 });
 
 client.on('messageCreate', async message => {
+  const pingAnswers = [
+    `Ich hoffe ${message.author.displayName} rutschen die Ärmel beim Händewaschen runter.`,
+    `Ich hoffe ${message.author.displayName} morgen langsames Internet.`,
+    `Ich hoffe ${message.author.displayName} vergisst sein wichtigstes Passwort.`,
+    `Ich hoffe das Handy von ${message.author.displayName} hat keinen Akku mehr, wenn er ein schönes Foto machen möchte.`,
+    `Ich hoffe der Stift von ${message.author.displayName} schreibt nicht mehr, wenn er ihn das nächste Mal braucht.`,
+    `Ich hoffe, dass die Fortsetzung der Lieblingsserie von ${message.author.displayName} um ein Jahr verschoben wird.`,
+    `Ich hoffe der Wecker von ${message.author.displayName} klingelt dann, wenn der Traum am schönsten ist.`,
+    `Ich hoffe, dass ${message.author.displayName} keinen Sitzplatz im Bus bekommt.`,
+    `Ich hoffe ${message.author.displayName} hat einen kleinen Stein im Schuh und keine Zeit ihn rauszunehmen.`,
+    `Ich hoffe ${message.author.displayName} wird angerufen, wenn er gerade sein Lieblingsessen essen wollte.`,
+    `Ich hoffe die Wasserflasche von ${message.author.displayName} ist immer dann leer, wenn er richtig durst hat.`,
+    `Ich hoffe das Internet von ${message.author.displayName} stürzt in der letzten Runde des nächsten Rennens ab.`,
+    `Ich hoffe die Bahn die ${message.author.displayName} immer nimmt, fällt aus.`,
+    `Ich hoffe wenn ${message.author.displayName} das nächste Mal Bus fährt, steigt ein ganzer Kindergarten ein.`
+  ];
+  
   if (message.content === '!ping') {
-      // Reply with "Pong!"
-      message.reply({content: 'Pong!', ephemeral: true});
-      console.log('Pinged successfully!');
+    const randomIndex = Math.floor(Math.random() * pingAnswers.length);
+    const randomAnswer = pingAnswers[randomIndex];
+    message.reply({ content: randomAnswer, ephemeral: true });
+    console.log('Pinged successfully!');
   } else if (message.content === '!db') {
-      const data = await fetchData();
-      const names = data.map(entry => entry.name).join(', ');
-      message.reply({content: names, ephemeral: true});
+    const data = await fetchData();
+    const names = data.map(entry => entry.name).join(', ');
+    message.reply({ content: names, ephemeral: true });
   }
 });
+
 
 async function fetchData() {
   try {
