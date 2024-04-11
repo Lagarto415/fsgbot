@@ -1,5 +1,5 @@
 import pkg from 'discord.js';
-const { Client, IntentsBitField } = pkg;
+const { Client, IntentsBitField, MessageActionRow, MessageButton, MessageSelectMenu } = pkg;
 import axios from 'axios';
 import fs from 'fs/promises';
 import { response } from 'express';
@@ -94,6 +94,18 @@ client.once('ready', () => {
           name: 'user',
           type: 6,
           description: 'The user to unban',
+          required: true
+        }
+      ]
+    },
+    {
+      name: 'profilepicture',
+      description: 'Sends you the Profile Picture of a user',
+      options: [
+        {
+          name: 'user',
+          type: 6,
+          description: 'The user to get the profile picture of',
           required: true
         }
       ]
@@ -260,7 +272,7 @@ client.on('guildMemberRemove', member => {
     }
 })
 
-//Kick Command
+//Commands
 client.on('interactionCreate', async interaction => {
   if (!interaction.isCommand()) return;
 
@@ -343,8 +355,22 @@ else if (commandName === 'unban') {
 await interaction.reply({ content: `${targetUser.tag} wurde entbannt.`, ephemeral: true });
 await modlog.send({ embeds: [embed] });
 }
+else if (commandName === 'profilepicture') {
+  const targetUser = options.getUser('user');
+  if (!targetUser) {
+    return await interaction.reply({ content: 'Please provide a valid user to fetch their profile picture.', ephemeral: true });
+  }
+  else {
+    const userAvatarURL = targetUser.displayAvatarURL({ format: 'png', dynamic: true, size: 512 });
 
+    // Send the user's profile picture as an image attachment
+    await interaction.reply({ files: [userAvatarURL] })
+      .then(() => console.log('Sent the user\'s profile picture'))
+      .catch(console.error);
+  }
+}
 });
+
 
 client.on('messageCreate', async message => {
   const pingAnswers = [

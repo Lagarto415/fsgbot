@@ -1,5 +1,5 @@
 import pkg from 'discord.js';
-const { Client, IntentsBitField } = pkg;
+const { Client, IntentsBitField, MessageActionRow, MessageButton, MessageSelectMenu } = pkg;
 import axios from 'axios';
 import fs from 'fs/promises';
 import { response } from 'express';
@@ -98,6 +98,18 @@ client.once('ready', () => {
             required: true
           }
         ]
+      },
+      {
+        name: 'profilepicture',
+        description: 'Sends you the Profile Picture of a user',
+        options: [
+          {
+            name: 'user',
+            type: 6,
+            description: 'The user to get the profile picture of',
+            required: true
+          }
+        ]
       }
     ];
     commands.forEach(createCommand);
@@ -125,11 +137,12 @@ async function checkTtvStatus() {
           const embed = {
             color: 0x00a31b,
             title: `:red_circle: ${stream} ist jetzt live! :red_circle:`,
-            description: response.data.data[0].title + '\n' +` https://twitch.tv/${stream}    @everyone`,
+            description: response.data.data[0].title + '\n' +` https://twitch.tv/${stream}`,
             timestamp: new Date(),
             image: {
                 url: 'https://media.discordapp.net/attachments/1224731046097059853/1224733171770462259/IMG_0923.jpg?ex=661e90a6&is=660c1ba6&hm=c473e8806c40907d49d075cc07e38fdfab742353c90e76c1865831fe0f06a06b&=&format=webp&width=853&height=905', // User's profile picture URL
             }};
+          ttvTextChannel.send('@everyone');
           ttvTextChannel.send({ embeds: [embed] });
           console.log("Twitch stream detected: " + stream + " is now live.");
         } else {
@@ -201,11 +214,12 @@ async function checkYT() {
           const embed = {
             color: 0x00a31b,
             title: `:arrow_forward: Ein neues YouTube Video ist online!`,
-            description: videoTitle + '\n' + videoUrl + '\n @everyone',
+            description: videoTitle + '\n' + videoUrl,
             timestamp: new Date(),
             image: {
                 url: latestVideo.snippet.thumbnails.high.url, // User's profile picture URL
             }};
+          ttvTextChannel.send("@everyone");
           ttvTextChannel.send({ embeds: [embed] });
   
           // Send notification to Discord server or perform any other action
@@ -347,6 +361,20 @@ else if (commandName === 'unban') {
 
 await interaction.reply({ content: `${targetUser.tag} wurde entbannt.`, ephemeral: true });
 await modlog.send({ embeds: [embed] });
+}
+else if (commandName === 'profilepicture') {
+  const targetUser = options.getUser('user');
+  if (!targetUser) {
+    return await interaction.reply({ content: 'Please provide a valid user to fetch their profile picture.', ephemeral: true });
+  }
+  else {
+    const userAvatarURL = targetUser.displayAvatarURL({ format: 'png', dynamic: true, size: 512 });
+
+    // Send the user's profile picture as an image attachment
+    await interaction.reply({ files: [userAvatarURL] })
+      .then(() => console.log('Sent the user\'s profile picture'))
+      .catch(console.error);
+  }
 }
 });
 
