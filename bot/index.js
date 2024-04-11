@@ -201,7 +201,7 @@ async function checkYT() {
           const embed = {
             color: 0x00a31b,
             title: `:arrow_forward:: Ein neues YouTube Video ist online! :arrow_backward:`,
-            description: videoTitle + '\n' + videoUrl,
+            description: videoTitle + '\n' + videoUrl + '\n @everyone',
             timestamp: new Date(),
             image: {
                 url: 'https://media.discordapp.net/attachments/1224731046097059853/1224733171770462259/IMG_0923.jpg?ex=661e90a6&is=660c1ba6&hm=c473e8806c40907d49d075cc07e38fdfab742353c90e76c1865831fe0f06a06b&=&format=webp&width=853&height=905', // User's profile picture URL
