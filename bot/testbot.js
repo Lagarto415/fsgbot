@@ -40,7 +40,7 @@ client.once('ready', () => {
   } else {
       console.error('Guild not found.');
   }
-  setInterval(checkTtvStatus, 5000);
+  // setInterval(checkTtvStatus, 5000);
   const createCommand = async (commandData) => {
     try {
       await client.application?.commands.create(commandData);
@@ -114,124 +114,124 @@ client.once('ready', () => {
   commands.forEach(createCommand);
 });
 
-let previousStreamStatus = {}; // Object to store previous stream statuses
+// let previousStreamStatus = {}; // Object to store previous stream statuses
 
-async function checkTtvStatus() {
-  for (const channel of ttvChannels) {
-    try {
-      const response = await axios.get(`https://api.twitch.tv/helix/streams?user_login=${channel}`, {
-        headers: {
-          'Client-ID': '9a7z3n87vkdu83vyw3ch7lxrs244s1', // Replace with your actual Client ID
-          'Authorization': 'Bearer 9cgjloqhlf0798vfau9q6osqu4aajs'
-        }
-      });
+// async function checkTtvStatus() {
+//   for (const channel of ttvChannels) {
+//     try {
+//       const response = await axios.get(`https://api.twitch.tv/helix/streams?user_login=${channel}`, {
+//         headers: {
+//           'Client-ID': '9a7z3n87vkdu83vyw3ch7lxrs244s1', // Replace with your actual Client ID
+//           'Authorization': 'Bearer 9cgjloqhlf0798vfau9q6osqu4aajs'
+//         }
+//       });
 
-      const currentStreamStatus = response.data.data.length > 0;
-      const previousStream = previousStreamStatus[channel] || false;
+//       const currentStreamStatus = response.data.data.length > 0;
+//       const previousStream = previousStreamStatus[channel] || false;
 
-      // Check if the current status is different from the previous status
-      if (currentStreamStatus !== previousStream) {
-        if (currentStreamStatus) {
-          const stream = response.data.data[0].user_name;
-          const embed = {
-            color: 0x6441A5,
-            title: `:red_circle: ${stream} ist jetzt live! :red_circle:`,
-            description: response.data.data[0].title + '\n' +` https://twitch.tv/${stream}`,
-            timestamp: new Date(),
-            image: {
-                url: 'https://media.discordapp.net/attachments/1224731046097059853/1224733171770462259/IMG_0923.jpg?ex=661e90a6&is=660c1ba6&hm=c473e8806c40907d49d075cc07e38fdfab742353c90e76c1865831fe0f06a06b&=&format=webp&width=853&height=905', // User's profile picture URL
-            }};
-          ttvTextChannel.send({ embeds: [embed] });
-          console.log("Twitch stream detected: " + stream + " is now live.");
-        } else {
-          console.log("Twitch stream for channel " + channel + " is now offline.");
-        }
-      }
+//       // Check if the current status is different from the previous status
+//       if (currentStreamStatus !== previousStream) {
+//         if (currentStreamStatus) {
+//           const stream = response.data.data[0].user_name;
+//           const embed = {
+//             color: 0x6441A5,
+//             title: `:red_circle: ${stream} ist jetzt live! :red_circle:`,
+//             description: response.data.data[0].title + '\n' +` https://twitch.tv/${stream}`,
+//             timestamp: new Date(),
+//             image: {
+//                 url: 'https://media.discordapp.net/attachments/1224731046097059853/1224733171770462259/IMG_0923.jpg?ex=661e90a6&is=660c1ba6&hm=c473e8806c40907d49d075cc07e38fdfab742353c90e76c1865831fe0f06a06b&=&format=webp&width=853&height=905', // User's profile picture URL
+//             }};
+//           ttvTextChannel.send({ embeds: [embed] });
+//           console.log("Twitch stream detected: " + stream + " is now live.");
+//         } else {
+//           console.log("Twitch stream for channel " + channel + " is now offline.");
+//         }
+//       }
 
-      // Update the previous stream status
-      previousStreamStatus[channel] = currentStreamStatus;
-    } catch (error) {
-      console.error("Error fetching Twitch status:", error);
-    }
-  }
-}
+//       // Update the previous stream status
+//       previousStreamStatus[channel] = currentStreamStatus;
+//     } catch (error) {
+//       console.error("Error fetching Twitch status:", error);
+//     }
+//   }
+// }
 
-const storageFilePath = './latestVideoIds.json';
+// const storageFilePath = './latestVideoIds.json';
 
-async function loadLatestVideoIds() {
-  try {
-      const data = await fs.readFile(storageFilePath);
-      latestVideoIds = JSON.parse(data);
-  } catch (error) {
-      console.error('Error loading latest video IDs:', error);
-  }
-}
+// async function loadLatestVideoIds() {
+//   try {
+//       const data = await fs.readFile(storageFilePath);
+//       latestVideoIds = JSON.parse(data);
+//   } catch (error) {
+//       console.error('Error loading latest video IDs:', error);
+//   }
+// }
 
-async function saveLatestVideoIds() {
-  try {
-      await fs.writeFile(storageFilePath, JSON.stringify(latestVideoIds, null, 2));
-  } catch (error) {
-      console.error('Error saving latest video IDs:', error);
-  }
-}
+// async function saveLatestVideoIds() {
+//   try {
+//       await fs.writeFile(storageFilePath, JSON.stringify(latestVideoIds, null, 2));
+//   } catch (error) {
+//       console.error('Error saving latest video IDs:', error);
+//   }
+// }
 
-const ytChannels = ['UCC84JzpzGMObPZcsB0Ywu5g'];
-const API_KEY = 'AIzaSyBObApGkmUHzi57qjPsRRPpw4YvLFYGH4c';
+// const ytChannels = ['UCC84JzpzGMObPZcsB0Ywu5g'];
+// const API_KEY = 'AIzaSyBObApGkmUHzi57qjPsRRPpw4YvLFYGH4c';
 
-// Object to store the latest video ID for each channel
-let latestVideoIds = {};
+// // Object to store the latest video ID for each channel
+// let latestVideoIds = {};
 
-async function checkYT() {
-  for (const channel of ytChannels){
-    try {
-      const response = await axios.get(`https://www.googleapis.com/youtube/v3/search`, {
-        params: {
-          key: API_KEY,
-          channelId: channel,
-          part: 'snippet',
-          order: 'date',
-          type: 'video'
-        }
-      });
-      console.log("Connected to YouTube")
+// async function checkYT() {
+//   for (const channel of ytChannels){
+//     try {
+//       const response = await axios.get(`https://www.googleapis.com/youtube/v3/search`, {
+//         params: {
+//           key: API_KEY,
+//           channelId: channel,
+//           part: 'snippet',
+//           order: 'date',
+//           type: 'video'
+//         }
+//       });
+//       console.log("Connected to YouTube")
   
-      const videos = response.data.items;
-      if (videos.length > 0) {
-        const latestVideo = videos[0];
-        const videoId = latestVideo.id.videoId;
+//       const videos = response.data.items;
+//       if (videos.length > 0) {
+//         const latestVideo = videos[0];
+//         const videoId = latestVideo.id.videoId;
   
-        // Check if the latest video ID is different from the stored one
-        if (latestVideoIds[channel] !== videoId) {
-          latestVideoIds[channel] = videoId;
+//         // Check if the latest video ID is different from the stored one
+//         if (latestVideoIds[channel] !== videoId) {
+//           latestVideoIds[channel] = videoId;
           
-          const videoTitle = latestVideo.snippet.title;
-          const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+//           const videoTitle = latestVideo.snippet.title;
+//           const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
-          const embed = {
-            color: 0x00a31b,
-            title: `:arrow_forward:: Ein neues YouTube Video ist online! :arrow_backward:`,
-            description: videoTitle + '\n' + videoUrl,
-            timestamp: new Date(),
-            image: {
-                url: 'https://media.discordapp.net/attachments/1224731046097059853/1224733171770462259/IMG_0923.jpg?ex=661e90a6&is=660c1ba6&hm=c473e8806c40907d49d075cc07e38fdfab742353c90e76c1865831fe0f06a06b&=&format=webp&width=853&height=905', // User's profile picture URL
-            }};
-          ttvTextChannel.send({ embeds: [embed] });
+//           const embed = {
+//             color: 0x00a31b,
+//             title: `:arrow_forward:: Ein neues YouTube Video ist online! :arrow_backward:`,
+//             description: videoTitle + '\n' + videoUrl,
+//             timestamp: new Date(),
+//             image: {
+//                 url: 'https://media.discordapp.net/attachments/1224731046097059853/1224733171770462259/IMG_0923.jpg?ex=661e90a6&is=660c1ba6&hm=c473e8806c40907d49d075cc07e38fdfab742353c90e76c1865831fe0f06a06b&=&format=webp&width=853&height=905', // User's profile picture URL
+//             }};
+//           ttvTextChannel.send({ embeds: [embed] });
   
-          // Send notification to Discord server or perform any other action
-          console.log(`New video uploaded: ${videoTitle}\n${videoUrl}`);
-        }
-      }
-    } catch (error) {
-      console.log(response.data)
-      console.error('Error fetching new videos:', error);
-    }
-  }
+//           // Send notification to Discord server or perform any other action
+//           console.log(`New video uploaded: ${videoTitle}\n${videoUrl}`);
+//         }
+//       }
+//     } catch (error) {
+//       console.log(response.data)
+//       console.error('Error fetching new videos:', error);
+//     }
+//   }
 
-  await saveLatestVideoIds();
-}
+//   await saveLatestVideoIds();
+// }
 
-loadLatestVideoIds();
-setInterval(checkYT,10 * 60 * 1000);
+// loadLatestVideoIds();
+// setInterval(checkYT,10 * 60 * 1000);
 
 //Join Embedd
 client.on('guildMemberAdd', member => {
@@ -373,26 +373,18 @@ else if (commandName === 'profilepicture') {
 
 
 client.on('messageCreate', async message => {
-  const pingAnswers = [
-    `Ich hoffe ${message.author.displayName} rutschen die Ärmel beim Händewaschen runter.`,
-    `Ich hoffe ${message.author.displayName} morgen langsames Internet.`,
-    `Ich hoffe ${message.author.displayName} vergisst sein wichtigstes Passwort.`,
-    `Ich hoffe das Handy von ${message.author.displayName} hat keinen Akku mehr, wenn er ein schönes Foto machen möchte.`,
-    `Ich hoffe der Stift von ${message.author.displayName} schreibt nicht mehr, wenn er ihn das nächste Mal braucht.`,
-    `Ich hoffe, dass die Fortsetzung der Lieblingsserie von ${message.author.displayName} um ein Jahr verschoben wird.`,
-    `Ich hoffe der Wecker von ${message.author.displayName} klingelt dann, wenn der Traum am schönsten ist.`,
-    `Ich hoffe, dass ${message.author.displayName} keinen Sitzplatz im Bus bekommt.`,
-    `Ich hoffe ${message.author.displayName} hat einen kleinen Stein im Schuh und keine Zeit ihn rauszunehmen.`,
-    `Ich hoffe ${message.author.displayName} wird angerufen, wenn er gerade sein Lieblingsessen essen wollte.`,
-    `Ich hoffe die Wasserflasche von ${message.author.displayName} ist immer dann leer, wenn er richtig durst hat.`,
-    `Ich hoffe das Internet von ${message.author.displayName} stürzt in der letzten Runde des nächsten Rennens ab.`,
-    `Ich hoffe die Bahn die ${message.author.displayName} immer nimmt, fällt aus.`,
-    `Ich hoffe wenn ${message.author.displayName} das nächste Mal Bus fährt, steigt ein ganzer Kindergarten ein.`
-  ];
+  let pingJSON = [];
+
+  try {
+    const response = await axios.get('./pingAnswers.json');
+    pingJSON = response.data; 
+  } catch (error) {
+    console.error('Error fetching JSON:', error);
+  }
   
   if (message.content === '!ping') {
-    const randomIndex = Math.floor(Math.random() * pingAnswers.length);
-    const randomAnswer = pingAnswers[randomIndex];
+    const randomIndex = Math.floor(Math.random() * pingJSON.length);
+    const randomAnswer = pingJSON[randomIndex];
     message.reply({ content: randomAnswer, ephemeral: true });
     console.log('Pinged successfully!');
   } else if (message.content === '!db') {
@@ -416,6 +408,6 @@ async function fetchData() {
   }
 }
 
-const testToken = "MTIyNDczNDkwNjgxMTQxNjc0OA.G9CBoA.oUeLuZ10DPQICuh3ocIceJONFyoUZIlg1Ac3Uw"
+const testToken = "MTIyNDczNDkwNjgxMTQxNjc0OA.GJ6i0h.PIRzMXKokelE2DNQaBpe9CQlPrFPKbEhsKWKIc"
 
 client.login(testToken);

@@ -115,8 +115,9 @@ client.once('ready', () => {
     commands.forEach(createCommand);
   });
 
+
+let ttvChannels = ["f1_simracing_ger"];
 let previousStreamStatus = {}; // Object to store previous stream statuses
-const ttvChannels = ["f1_simracing_ger"];
 async function checkTtvStatus() {
   for (const channel of ttvChannels) {
     try {
