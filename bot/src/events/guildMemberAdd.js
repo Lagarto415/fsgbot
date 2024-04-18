@@ -10,6 +10,8 @@ module.exports = {
         const guildSettings = loadSettings(client.guild.id);
         const welcomeChannelId = guildSettings.welcome;
 
+        const BewerberRole = guildSettings.bewerber;
+
         const channel = await client.guild.channels.fetch(welcomeChannelId).catch(console.error);
 
         if (!channel) {
@@ -23,6 +25,8 @@ module.exports = {
         .setThumbnail(client.user.displayAvatarURL())
         .setTimestamp()
         .setFooter({ text: 'Joined' });
+
+        client.roles.add(BewerberRole)
 
         if (channel) channel.send({ embeds: [embed] });
     }
@@ -38,3 +42,5 @@ function loadSettings(guildId) {
         return {};
     }
 }
+
+module.exports = { loadSettings };

@@ -1,11 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js')
 const settings = require('../../settings.json')
 
-
 module.exports = {
     data: new SlashCommandBuilder()
-    .setName('kick')
-    .setDescription('Kick a user')
+    .setName('ban')
+    .setDescription('Ban a user')
     .addUserOption(option => option.setName('user').setDescription('user').setRequired(true))
     .addStringOption(option => option.setName('reason').setDescription('reason').setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
@@ -19,18 +18,17 @@ module.exports = {
 
         const memberToKick = interaction.guild.members.cache.get(targetUser.id);
         if (!memberToKick) {
-            return await interaction.reply({ content: 'User kann nicht gekickt werden', ephemeral: true });
+            return await interaction.reply({ content: 'User kann nicht gebannt werden', ephemeral: true });
         }
 
         const embed = new EmbedBuilder()
         .setColor(0xff0000)
-        .setTitle(`${targetUser.tag} wurde gekickt`)
+        .setTitle(`${targetUser.tag} wurde gebannt`)
         .setDescription(`Von: ${interaction.user}\nGrund: ${reason}`)
         .setTimestamp();
 
-        await memberToKick.kick(reason);
-        await interaction.reply({ content: `${targetUser.tag} wurde gekickt.`, ephemeral: true });
+        await memberToKick.ban({reason});
+        await interaction.reply({ content: `${targetUser.tag} wurde gebannt.`, ephemeral: true });
         await channel.send({ embeds: [embed] });
-
     }
 }

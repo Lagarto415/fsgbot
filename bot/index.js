@@ -136,7 +136,7 @@ async function checkTtvStatus() {
         if (currentStreamStatus) {
           const stream = response.data.data[0].user_name;
           const embed = {
-            color: 0x00a31b,
+            color: 0x6441A5,
             title: `:red_circle: ${stream} ist jetzt live! :red_circle:`,
             description: response.data.data[0].title + '\n' +` https://twitch.tv/${stream}`,
             timestamp: new Date(),

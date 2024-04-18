@@ -20,6 +20,8 @@ client.commands = new Collection();
 
 client.on('ready', () => {
     console.log(`Connection established! \nLogged in as User ${client.user.tag}!\nClient created at ${client.application.createdAt}\nCurrently in ${client.guilds.cache.size} Servers!`)
+    const ttvNotify = require('./functions/ttvNotify');
+    // ttvNotify(client);
 })
 
 const functions = fs.readdirSync("./src/functions").filter(file => file.endsWith(".js"));
