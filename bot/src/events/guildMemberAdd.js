@@ -1,6 +1,7 @@
 const { EmbedBuilder } = require("discord.js");
 const fs = require('fs');
 const path = require('path');
+const loadSettings = require('../functions/loadSettings');
 
 module.exports = {
     name: 'guildMemberAdd',
@@ -13,6 +14,8 @@ module.exports = {
         const BewerberRole = guildSettings.bewerber;
 
         const channel = await client.guild.channels.fetch(welcomeChannelId).catch(console.error);
+        const rulesChannel = await client.guild.channels.fetch(guildSettings.rules);
+        const bewerberChannel = await client.guild.channels.fetch(guildSettings.driver_application);
 
         if (!channel) {
             console.log("Welcome channel not found.");
@@ -20,27 +23,13 @@ module.exports = {
         }
 
         const embed = new EmbedBuilder()
-        .setTitle("Willkommen!")
-        .setDescription(`Hallo <@${client.user.id}>, schön das du da bist!`)
+        .setTitle("Willkommen in der FSG!")
+        .setDescription(`Hallo ${client.user.displayName}, bitte schaue dir die ${rulesChannel} an und bewirb dich als Fahrer unter ${bewerberChannel}.`)
         .setThumbnail(client.user.displayAvatarURL())
         .setTimestamp()
-        .setFooter({ text: 'Joined' });
 
         client.roles.add(BewerberRole)
 
-        if (channel) channel.send({ embeds: [embed] });
+        if (channel) await channel.send({ embeds: [embed], content: `${client.user}` });
     }
 }
-
-function loadSettings(guildId) {
-    const settingsFilePath = path.join(__dirname, '../settings.json');
-    try {
-        const settings = JSON.parse(fs.readFileSync(settingsFilePath, 'utf-8') || '{}');
-        return settings[guildId] || {};
-    } catch (error) {
-        console.error("Error loading settings:", error);
-        return {};
-    }
-}
-
-module.exports = { loadSettings };

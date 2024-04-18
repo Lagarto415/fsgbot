@@ -1,23 +1,16 @@
 const { EmbedBuilder } = require('discord.js')
 const axios = require('axios');
+const { loadSettings } = require('../events/guildMemberAdd');
 const previousStreamStatus = {};
+
+
 
 module.exports = (client) => {
     setInterval(async () => {
-        const ttvChannels = ["f1_simracing_ger", "juqutsu"];
-        const guild = client.guilds.cache.get('1121488994149081110');
-        if (!guild) {
-            console.error('Guild not found!');
-            return;
-        }
+        const ttvChannels = ["f1_simracing_ger", "lagarto4105"];
+        // const guild = client.guilds.cache.get('1121488994149081110');
 
-        console.log(guild.name)
-
-        const ttvTextChannel = guild.channels.cache.get('1225841643123507333');
-        if (!ttvTextChannel) {
-            console.error('Text channel not found!');
-            return;
-        }
+        // const ttvTextChannel = guild.channels.cache.get('1225841643123507333');
 
         for (const channel of ttvChannels) {
             try {
@@ -28,8 +21,6 @@ module.exports = (client) => {
                         'Authorization': `Bearer ${process.env.TWITCH_BEARER_TOKEN}`
                     }
                 });
-                console.log(response)
-
 
                 const currentStreamStatus = response.data.data.length > 0;
                 const previousStream = previousStreamStatus[channel] || false;
@@ -43,9 +34,12 @@ module.exports = (client) => {
                         .setDescription(response.data.data[0].title + '\n' +` https://twitch.tv/${stream}`)
                         .setThumbnail('https://static-cdn.jtvnw.net/jtv_user_pictures/a261f3d4-5d74-482d-b427-c86c910bc3b8-profile_image-300x300.png')
                         .setTimestamp();
-                      
-                        ttvTextChannel.send('@everyone')
-                        ttvTextChannel.send({ embeds: [embed] });
+                        
+                        client.guilds.cache.forEach(element => {
+                            const guild = client.guilds.cache.get(element.id);
+                            const ttvTextChannel = guild.channels.cache.get(loadSettings(guild.id).ttv)
+                            ttvTextChannel.send({ embeds: [embed], content: '@everyone'});
+                        });
                         console.log("Twitch stream detected: " + stream + " is now live.");
                     } else {
                         console.log("Twitch stream for channel " + channel + " is now offline.");
