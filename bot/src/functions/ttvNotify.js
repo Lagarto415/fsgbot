@@ -41,7 +41,7 @@ module.exports = (client) => {
                         .setColor(0x6441a5)
                         .setTitle(`:red_circle: ${stream} ist jetzt live! :red_circle:`)
                         .setDescription(response.data.data[0].title + '\n' +` https://twitch.tv/${stream}`)
-                        .setThumbnail(response.data.data[0].profile_image_url)
+                        .setThumbnail('https://static-cdn.jtvnw.net/jtv_user_pictures/a261f3d4-5d74-482d-b427-c86c910bc3b8-profile_image-300x300.png')
                         .setTimestamp();
                       
                         ttvTextChannel.send('@everyone')
