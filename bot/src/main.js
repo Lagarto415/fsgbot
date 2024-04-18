@@ -28,7 +28,6 @@ const commands = fs.readdirSync("./commands");
     for (file of utils) {
         require(`./utils/${file}`)(client);
     }
-    console.log("TRIGGERED")
     client.handleEvents(events, "./src/events");
     client.handleCommands(commands, "./src/commands");
 })();
