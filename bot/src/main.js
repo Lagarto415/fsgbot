@@ -1,4 +1,4 @@
-const { Client, IntentsBitField, Collection } = require('discord.js');
+const { Client, IntentsBitField, Collection, Partials } = require('discord.js');
 
 const fs = require('fs');
 const path = require('path');
@@ -11,8 +11,10 @@ const client = new Client ({
         IntentsBitField.Flags.Guilds,
         IntentsBitField.Flags.GuildMessages,
         IntentsBitField.Flags.MessageContent,
-        IntentsBitField.Flags.GuildMembers
+        IntentsBitField.Flags.GuildMembers,
+        IntentsBitField.Flags.GuildPresences,
     ],
+    partials: [Partials.Message, Partials.Channel]
 })
 client.commands = new Collection();
 
@@ -20,19 +22,18 @@ client.on('ready', () => {
     console.log(`Connection established! \nLogged in as User ${client.user.tag}!\nClient created at ${client.application.createdAt}\nCurrently in ${client.guilds.cache.size} Servers!`)
 })
 
-const utils = fs.readdirSync("./utils").filter(file => file.endsWith(".js"));
-const events = fs.readdirSync("./events").filter(file => file.endsWith(".js"));
-const commands = fs.readdirSync("./commands");
+const functions = fs.readdirSync("./src/functions").filter(file => file.endsWith(".js"));
+const eventFiles = fs.readdirSync("./src/events").filter(file => file.endsWith(".js"));
+const commandFolders = fs.readdirSync("./src/commands");
 
 (async () => {
-    for (file of utils) {
-        require(`./utils/${file}`)(client);
+    for (file of functions) {
+        require(`./functions/${file}`)(client);
     }
-    client.handleEvents(events, "./src/events");
-    client.handleCommands(commands, "./src/commands");
+    client.handleEvents(eventFiles, "./src/events");
+    client.handleCommands(commandFolders, "./src/commands");
 })();
-
-const fsgToken = process.env.FSG_TOKEN
-const testToken = process.env.TEST_TOKEN
-console.log("TOKEN: "+ testToken)
+const fsgToken = process.env.FSG_TOKEN;
+const testToken = process.env.TEST_TOKEN;
+// console.log("TOKEN: "+ testToken)
 client.login(testToken)
