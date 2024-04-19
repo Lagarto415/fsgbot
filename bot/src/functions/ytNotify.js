@@ -1,7 +1,7 @@
 const { EmbedBuilder } = require('discord.js')
 const axios = require('axios');
-const { loadSettings } = require('../events/guildMemberAdd');
-const fs = require('fs');
+const fs = require('fs').promises;
+const loadSettings = require('./loadSettings')
 
 const storageFilePath = './src/data/latestVideoIds.json';
 let latestVideoIds = {};
@@ -14,7 +14,7 @@ module.exports = (client) => {
             try {
               const response = await axios.get(`https://www.googleapis.com/youtube/v3/search`, {
                 params: {
-                  key: process.env.API_KEY,
+                  key: process.env.YT_KEY,
                   channelId: channel,
                   part: 'snippet',
                   order: 'date',
@@ -27,8 +27,7 @@ module.exports = (client) => {
               if (videos.length > 0) {
                 const latestVideo = videos[0];
                 const videoId = latestVideo.id.videoId;
-          
-                // Check if the latest video ID is different from the stored one
+
                 if (latestVideoIds[channel] !== videoId) {
                   latestVideoIds[channel] = videoId;
                   
@@ -38,34 +37,29 @@ module.exports = (client) => {
                     const embed = new EmbedBuilder()
                     .setColor(0x00a31b)
                     .setTitle(`:arrow_forward: Ein neues YouTube Video ist online!`)
+                    .setImage(latestVideo.snippet.thumbnails.high.url)
                     .setDescription(videoTitle + '\n' + videoUrl)
-                    .setThumbnail(latestVideo.snippet.thumbnails.high.url)
                     .setTimestamp();
                     client.guilds.cache.forEach(element => {
                         const guild = client.guilds.cache.get(element.id);
                         const ttvTextChannel = guild.channels.cache.get(loadSettings(guild.id).ttv)
-                        ttvTextChannel.send({ embeds: [embed], content: '@everyone' });
+                        ttvTextChannel.send({ embeds: [embed], content: `@everyone`, });
                     });
           
-                  // Send notification to Discord server or perform any other action
                   console.log(`New video uploaded: ${videoTitle}\n${videoUrl}`);
                 }
               }
             } catch (error) {
-              console.log(response.data)
               console.error('Error fetching new videos:', error);
             }
-          }
-        
+          }        
           await saveLatestVideoIds();
     }, 15 * 60 * 1000);
 }
 
-loadLatestVideoIds();
-
 async function loadLatestVideoIds() {
     try {
-        const data = await fs.readFileSync(storageFilePath);
+        const data = await fs.readFile(storageFilePath);
         latestVideoIds = JSON.parse(data);
     } catch (error) {
         console.error('Error loading latest video IDs:', error);
@@ -79,3 +73,5 @@ async function loadLatestVideoIds() {
         console.error('Error saving latest video IDs:', error);
     }
   }
+
+  loadLatestVideoIds();
