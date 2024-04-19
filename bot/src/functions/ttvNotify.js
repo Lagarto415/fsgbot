@@ -1,6 +1,6 @@
 const { EmbedBuilder } = require('discord.js')
 const axios = require('axios');
-const { loadSettings } = require('../events/guildMemberAdd');
+const loadSettings = require("../functions/loadSettings");
 const previousStreamStatus = {};
 
 
@@ -8,10 +8,6 @@ const previousStreamStatus = {};
 module.exports = (client) => {
     setInterval(async () => {
         const ttvChannels = ["f1_simracing_ger", "lagarto4105"];
-        // const guild = client.guilds.cache.get('1121488994149081110');
-
-        // const ttvTextChannel = guild.channels.cache.get('1225841643123507333');
-
         for (const channel of ttvChannels) {
             try {
 
@@ -37,7 +33,7 @@ module.exports = (client) => {
                         
                         client.guilds.cache.forEach(element => {
                             const guild = client.guilds.cache.get(element.id);
-                            const ttvTextChannel = guild.channels.cache.get(loadSettings(guild.id).ttv)
+                            const ttvTextChannel = guild.channels.cache.get(loadSettings(guild.id).channels.ttv)
                             ttvTextChannel.send({ embeds: [embed], content: '@everyone'});
                         });
                         console.log("Twitch stream detected: " + stream + " is now live.");

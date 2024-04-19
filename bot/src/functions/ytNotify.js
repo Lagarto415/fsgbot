@@ -1,7 +1,7 @@
 const { EmbedBuilder } = require('discord.js')
 const axios = require('axios');
 const fs = require('fs').promises;
-const loadSettings = require('./loadSettings')
+const loadSettings = require("../functions/loadSettings");
 
 const storageFilePath = './src/data/latestVideoIds.json';
 let latestVideoIds = {};
@@ -42,7 +42,7 @@ module.exports = (client) => {
                     .setTimestamp();
                     client.guilds.cache.forEach(element => {
                         const guild = client.guilds.cache.get(element.id);
-                        const ttvTextChannel = guild.channels.cache.get(loadSettings(guild.id).ttv)
+                        const ttvTextChannel = guild.channels.cache.get(loadSettings(guild.id).channels.ttv)
                         ttvTextChannel.send({ embeds: [embed], content: `@everyone`, });
                     });
           

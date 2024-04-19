@@ -9,13 +9,13 @@ module.exports = {
         console.log("New member joined!");
 
         const guildSettings = loadSettings(client.guild.id);
-        const welcomeChannelId = guildSettings.welcome;
+        const welcomeChannelId = guildSettings.channels.welcome;
 
-        const BewerberRole = guildSettings.bewerber;
+        const BewerberRole = guildSettings.roles.bewerber;
 
         const channel = await client.guild.channels.fetch(welcomeChannelId).catch(console.error);
-        const rulesChannel = await client.guild.channels.fetch(guildSettings.rules);
-        const bewerberChannel = await client.guild.channels.fetch(guildSettings.driver_application);
+        const rulesChannel = await client.guild.channels.fetch(guildSettings.channels.rules);
+        const bewerberChannel = await client.guild.channels.fetch(guildSettings.channels.driver_application);
 
         if (!channel) {
             console.log("Welcome channel not found.");

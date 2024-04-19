@@ -11,7 +11,7 @@ module.exports = {
     
     async execute(interaction, client){
         const guildId = interaction.guildId
-        const modlog = settings[guildId].modlog
+        const modlog = settings[guildId].channels.modlog
         const channel = client.channels.cache.get(modlog)
         const targetUser = interaction.options.getUser('user')
         const reason = interaction.options.getString('reason') || 'no reason provided'

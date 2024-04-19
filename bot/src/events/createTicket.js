@@ -138,10 +138,10 @@ async function newTicket(reason, initiator, notificationRole, interaction) {
 
     switch (notificationRole) {
         case "Adminkontakt":
-            notRole = settings.admin;
+            notRole = settings.roles.admin;
             break;
         case "Rennvorfall":
-            notRole = settings.fia;
+            notRole = settings.roles.fia;
             break;
         default:
             console.log("No notification role found");
@@ -156,7 +156,7 @@ async function newTicket(reason, initiator, notificationRole, interaction) {
         newChannel = await interaction.guild.channels.create({
             name: `${ticketCount} - ${interaction.user.displayName} - ${reason}`,
             type: ChannelType.GuildText,
-            parent: settings.ticketCategory,
+            parent: settings.categories.ticketCategory,
             permissionOverwrites: [
                 {
                     id: initiator,

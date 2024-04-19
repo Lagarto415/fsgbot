@@ -7,6 +7,8 @@ module.exports = {
     .addUserOption(option => option.setName('user').setDescription('user').setRequired(true)),
 
     async execute(interaction, client) {
+        if (interaction.channel.parent == loadSettings(interaction.guild.id).ticketCategory) {
+
     const userToRemove = interaction.options.getUser('user');
     const ticketChannel = interaction.channel;
 
@@ -32,5 +34,5 @@ module.exports = {
         console.error("Error removing user from ticket:", err);
         await interaction.reply({ content: "An error occurred while removing the user.", ephemeral: true });
     }    
-    }
+    }}
 }
