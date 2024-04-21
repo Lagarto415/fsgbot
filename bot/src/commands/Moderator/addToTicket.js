@@ -1,4 +1,5 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js')
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js')
+const loadSettings = require('../../functions/loadSettings');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -7,7 +8,7 @@ module.exports = {
     .addUserOption(option => option.setName('user').setDescription('user').setRequired(true)),
 
     async execute(interaction, client) {
-        if (interaction.channel.parent == loadSettings(interaction.guild.id).ticketCategory) {
+        if (interaction.channel.parent == loadSettings(interaction.guild.id).categories.ticketCategory) {
 
     const userToRemove = interaction.options.getUser('user');
     const ticketChannel = interaction.channel;

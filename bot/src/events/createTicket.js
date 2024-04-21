@@ -1,4 +1,4 @@
-const { ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, UserSelectMenuBuilder} = require("discord.js");
+const { ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, UserSelectMenuBuilder, AttachmentBuilder} = require("discord.js");
 const loadSettings = require("../functions/loadSettings");
 const fs = require('fs');
 
@@ -10,19 +10,45 @@ module.exports = {
     name: "interactionCreate",
 
     async execute(interaction, client) {
+        const settings = loadSettings(interaction.guildId);
+        const fiaRole = settings.roles.fia;
+        const adminRole = settings.roles.admin;
+        const ModLog =  client.channels.cache.get(settings.channels.modlog);
+        const warningFile = new AttachmentBuilder('./src/images/warning.png');
+        
         if (!interaction.isButton() && !interaction.isStringSelectMenu() && !interaction.isUserSelectMenu()) return; 
         else if (interaction.customId.startsWith("close-ticket")) {
             const [_, channelId] = interaction.customId.split('|');
             const channel = await interaction.guild.channels.fetch(channelId);
+            const member = await interaction.guild.members.fetch(interaction.user.id);
+            if (!member.roles.cache.has(fiaRole) && !member.roles.cache.has(adminRole)){
+                const embed = new EmbedBuilder()
+                .setColor(0xff1100)
+                .setTitle("Unerlaubter Versuch Ticket zu schließen")
+                .setDescription(`${interaction.user} hat versucht das Ticket ${channel} zu schließen`)
+                .setThumbnail('attachment://warning.png')
+                .setTimestamp()
+                interaction.reply({ content: "Du musst Teil FIA oder Admin sein um ein Ticket zu schließen", ephemeral: true });
+                ModLog.send({ embeds: [embed], files: [warningFile] });
+                return;
+            }
             if (channel) {
-                interaction.user.send(`Ticket (${channel.name}) geschlossen`);
+                const embed = new EmbedBuilder()
+                .setColor(0xff1100)
+                .setTitle("Ticket geschlossen")
+                .setDescription(`Ticket: ${channel.name}\nVon: ${interaction.user}`)
+                .setThumbnail('attachment://warning.png')
+                .setTimestamp()
+                ModLog.send({embeds: [embed], files: [warningFile]});
                 channel.delete();
             }
         }
+        
+        
         else if(interaction.customId.startsWith("ticket-init")){
             const reasonSelection = new StringSelectMenuBuilder()
             .setCustomId('reason-selection')
-            .setPlaceholder('Grund')
+            .setPlaceholder('Warum möchtest du das Ticket erstellen?')
             .addOptions([
                 new StringSelectMenuOptionBuilder()
                 .setLabel('Rennvorfall')
@@ -41,16 +67,11 @@ module.exports = {
                 .setDescription('Du möchtest einen Bug melden')
                 .setValue('bug-report'),
             ])
-    
-            const reasonEmbed = new EmbedBuilder()
-            .setColor(0x00ffff)
-            .setTitle('Grund')
-            .setDescription('Warum möchtest du das Ticket erstellen?')
-    
+
             const reasonRow = new ActionRowBuilder()
             .addComponents(reasonSelection)
     
-            await interaction.reply({ embeds: [reasonEmbed], components: [reasonRow], ephemeral: true })
+            await interaction.reply({ components: [reasonRow], ephemeral: true })
 
         }
         else if (interaction.isStringSelectMenu()) {
@@ -77,26 +98,22 @@ module.exports = {
                 console.log("Rennvorfall selected");
                 const selectionMenu = new UserSelectMenuBuilder()
                 .setCustomId('rennvorfall')
-                .setPlaceholder('Beschuldigter')
+                .setPlaceholder('Wer war an diesem Rennvorfall mit beteiligt?')
                 .setMinValues(1)
                 .setMaxValues(1)
 
                 const selectionRow = new ActionRowBuilder()
                 .addComponents(selectionMenu)
 
-                const selectionEmbed = new EmbedBuilder()
-                .setColor(0x00ffff)
-                .setTitle('Ticket Konfigurieren')
-                .setDescription('Welchen Beschuldigten?')
-
-
-                await interaction.reply({ embeds: [selectionEmbed], components: [selectionRow], ephemeral: true })
+                await interaction.reply({components: [selectionRow], ephemeral: true })
             }
             async function handleAdminkontakt(){
                 console.log("Adminkontakt selected");
                 TicketOpenEmbed = new EmbedBuilder()
                 .setTitle(`Adminkontakt`)
+                .setColor(0xae00ff)
                 .addFields({ name: 'Von:', value: interaction.user.toString()})
+                .setTimestamp()
 
                 newTicket('adminkontakt',interaction.user.id, 'Adminkontakt', interaction)
             }
@@ -104,7 +121,9 @@ module.exports = {
                 console.log("Bug Report selected");
                 TicketOpenEmbed = new EmbedBuilder()
                 .setTitle(`Bug Report`)
+                .setColor(0xae00ff)
                 .addFields({ name: 'Von:', value: interaction.user.toString()})
+                .setTimestamp()
 
                 newTicket('bug-report',interaction.user.id, 'Adminkontakt', interaction)
             }
@@ -112,7 +131,9 @@ module.exports = {
                 console.log("Dnf selected");
                 TicketOpenEmbed = new EmbedBuilder()
                 .setTitle('DNF')
+                .setColor(0xae00ff)
                 .addFields({ name: 'Von:', value: interaction.user.toString()})
+                .setTimestamp()
 
                 newTicket('dnf',interaction.user.id, 'Rennvorfall', interaction)
             }
@@ -121,8 +142,10 @@ module.exports = {
             if (interaction.customId == 'rennvorfall'){
                 TicketOpenEmbed = new EmbedBuilder()
                 .setTitle(`Rennvorfall`)
+                .setColor(0xae00ff)
                 .addFields({ name: 'Rennvorfall gemeldet von:' ,value: interaction.user.toString()})
                 .addFields({ name: 'Beschuldigter:', value: client.users.cache.find(user => user.id === interaction.values[0]).toString() })
+                .setTimestamp()
 
                 newTicket('rennvorfall',interaction.user.id, 'Rennvorfall', interaction)
             }
@@ -172,15 +195,13 @@ async function newTicket(reason, initiator, notificationRole, interaction) {
                 }
             ]
         })
-        interaction.reply({
-            content: `Ticket erstellt!`,
-            ephemeral: true
-        })
+        await interaction.deferUpdate();
         await fs.promises.writeFile('./src/data/ticket_counter.json', JSON.stringify({ count: ticketCount }));
 
     } catch (err) { 
         console.error(err);
     }
+    const file = new AttachmentBuilder('./src/images/ticket.png');
     const closeTicket = new ButtonBuilder()
     .setCustomId(`close-ticket|${newChannel.id}`)
     .setLabel('Ticket schließen')
@@ -190,6 +211,7 @@ async function newTicket(reason, initiator, notificationRole, interaction) {
         .addComponents(closeTicket)
 
     const embed = TicketOpenEmbed;
+    embed.setThumbnail('attachment://ticket.png');
 
-    newChannel.send({ embeds: [embed], content: `<@&${notRole}>`, components: [row] }); 
+    newChannel.send({ embeds: [embed], content: `<@&${notRole}>`, components: [row], files: [file] }); 
 }

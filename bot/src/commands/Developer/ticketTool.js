@@ -1,24 +1,26 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, AttachmentBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-    .setName('create-ticket-creator')
-    .setDescription('Create a ticket creator panel'),
+        .setName('create-ticket-creator')
+        .setDescription('Create a ticket creator panel'),
 
     async execute(interaction) {
+        const file = new AttachmentBuilder('./src/images/ticket.png');
         const initialEmbed = new EmbedBuilder()
-        .setColor(0xff0000)
-        .setTitle('Ticket erstellen')
-        .setDescription('Hier kannst du ein Ticket erstellen.')
+            .setColor(0xae00ff)
+            .setTitle('Ticket erstellen')
+            .setDescription('Hier kannst du ein Ticket erstellen.')
+            .setThumbnail('attachment://ticket.png');
 
         const initialRow = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-            .setStyle(ButtonStyle.Primary)
-            .setLabel('Ticket erstellen')
-            .setCustomId('ticket-init')
-        )
+            .addComponents(
+                new ButtonBuilder()
+                    .setStyle(ButtonStyle.Primary)
+                    .setLabel('Ticket erstellen')
+                    .setCustomId('ticket-init')
+            );
 
-        interaction.channel.send({ embeds: [initialEmbed], components: [initialRow] });
+        await interaction.channel.send({ embeds: [initialEmbed], components: [initialRow], files: [file] });
     }
-}
+};

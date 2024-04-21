@@ -47,13 +47,13 @@ module.exports = (client) => {
                     });
           
                   console.log(`New video uploaded: ${videoTitle}\n${videoUrl}`);
+                  await saveLatestVideoIds();
                 }
               }
             } catch (error) {
               console.error('Error fetching new videos:', error);
             }
           }        
-          await saveLatestVideoIds();
     }, 15 * 60 * 1000);
 }
 

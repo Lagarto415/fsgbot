@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js')
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, AttachmentBuilder } = require('discord.js')
 const settings = require('../../settings.json')
 
 module.exports = {
@@ -12,6 +12,7 @@ module.exports = {
     async execute(interaction, client){
         const guildId = interaction.guildId
         const modlog = settings[guildId].channels.modlog
+        const warningFile = new AttachmentBuilder('./src/images/warning.png');
         const channel = client.channels.cache.get(modlog)
         const targetUser = interaction.options.getUser('user')
         const reason = interaction.options.getString('reason') || 'no reason provided'
@@ -24,11 +25,12 @@ module.exports = {
         const embed = new EmbedBuilder()
         .setColor(0xff0000)
         .setTitle(`${targetUser.tag} wurde gebannt`)
+        .setThumbnail('attachment://warning.png')
         .setDescription(`Von: ${interaction.user}\nGrund: ${reason}`)
         .setTimestamp();
 
         await memberToKick.ban({reason});
         await interaction.reply({ content: `${targetUser.tag} wurde gebannt.`, ephemeral: true });
-        await channel.send({ embeds: [embed] });
+        await channel.send({ embeds: [embed], files: [warningFile] });
     }
 }
