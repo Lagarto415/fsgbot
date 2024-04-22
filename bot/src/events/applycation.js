@@ -1,14 +1,20 @@
-const {ActionRowBuilder, TextInputStyle, ModalBuilder, TextInputBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder} = require("discord.js");
+const {ActionRowBuilder,AttachmentBuilder, TextInputStyle,ButtonStyle, ModalBuilder, TextInputBuilder, ButtonBuilder, EmbedBuilder} = require("discord.js");
 const loadSettings = require("../functions/loadSettings");
 const fs = require('fs');
 
-const selections = {};
+
+let applyingUser = ''
+let ki = '';
+let fahrernummer = '';
+let eaId = '';
+let inputDevice = '';
+let teamPreference = '';
 
 module.exports = {
     name: "interactionCreate",
     async execute(interaction) {
         
-        if (!interaction.isButton() && !interaction.isModalSubmit() && !interaction.isStringSelectMenu()) return;
+        if (!interaction.isButton() && !interaction.isModalSubmit()) return;
 
         if (interaction.customId == "application") {
             // Code for showing initial modal
@@ -21,13 +27,15 @@ module.exports = {
                             .setCustomId('KI')
                             .setLabel('KI Stärke')
                             .setStyle(TextInputStyle.Short)
-                            .setPlaceholder('KI Stärke eingeben')
+                            .setPlaceholder('Deine ungefähre KI Stärke')
+                            .setRequired(true)
                     ),
                     new ActionRowBuilder().addComponents(
                         new TextInputBuilder()
                             .setCustomId('fahrernummer')
                             .setLabel('Gewünschte Fahrernummer')
                             .setStyle(TextInputStyle.Short)
+                            .setPlaceholder('Welche Fahrernummer hättest du gerne?')
                             .setRequired(true)
                     ),
                     new ActionRowBuilder().addComponents(
@@ -35,6 +43,23 @@ module.exports = {
                             .setCustomId('eaId')
                             .setLabel('PSN / EA-Name')
                             .setStyle(TextInputStyle.Short)
+                            .setPlaceholder('PSN / EA-Name')
+                            .setRequired(true)
+                    ),
+                    new ActionRowBuilder().addComponents(
+                        new TextInputBuilder()
+                            .setCustomId('input-device')
+                            .setLabel('Lenkrad / Controller')
+                            .setStyle(TextInputStyle.Short)
+                            .setPlaceholder('Lenkrad / Controller')
+                            .setRequired(true)
+                    ),
+                    new ActionRowBuilder().addComponents(
+                        new TextInputBuilder()
+                            .setCustomId('team-preference')
+                            .setLabel('Teamwunsch')
+                            .setStyle(TextInputStyle.Short)
+                            .setPlaceholder('Für welches Team willst du fahren?')
                             .setRequired(true)
                     )
                 );
@@ -42,59 +67,55 @@ module.exports = {
         }
         else if (interaction.customId === 'application-modal' && interaction.isModalSubmit()) {
             // Processing modal submission
-            const ki = interaction.fields.getTextInputValue('KI');
-            const fahrernummer = interaction.fields.getTextInputValue('fahrernummer');
-            const eaId = interaction.fields.getTextInputValue('eaId');
+            ki = interaction.fields.getTextInputValue('KI');
+            fahrernummer = interaction.fields.getTextInputValue('fahrernummer');
+            eaId = interaction.fields.getTextInputValue('eaId');
+            inputDevice = interaction.fields.getTextInputValue('input-device');
+            teamPreference = interaction.fields.getTextInputValue('team-preference');
+            const file = new AttachmentBuilder('./src/images/formular.png');
 
-            // Now present select menus
-            await interaction.reply({
-                content: "Please choose your input device and team preference.",
-                components: [
-                    new ActionRowBuilder().addComponents(
-                        new StringSelectMenuBuilder()
-                            .setCustomId('input-device')
-                            .setPlaceholder('Choose input device')
-                            .addOptions(
-                                { label: 'Steering Wheel', value: 'wheel' },
-                                { label: 'Controller', value: 'controller' }
-                            )
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new StringSelectMenuBuilder()
-                            .setCustomId('team-preference')
-                            .setPlaceholder('Choose your preferred team')
-                            .addOptions(
-                                { label: 'Mercedes', value: 'mercedes' },
-                                { label: 'Ferrari', value: 'ferrari' }
-                                // Add more teams as required
-                            )
-                    )
-                ],
-                ephemeral: true
-            });
+            applyingUser = interaction.user;
 
+            const userImage = interaction.user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 });
+
+            const buttonRow = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setStyle('Success')
+                        .setCustomId('application-accepted')
+                        .setLabel('Annehmen')
+                        .setEmoji('✅'),
+                    new ButtonBuilder()
+                        .setStyle('Danger')
+                        .setLabel('Ablehnen')
+                        .setCustomId('application-rejected')
+                        .setEmoji('✖️')
+                )
+
+            const embed = new EmbedBuilder()
+                .setTitle(`Fahrerbewerbung von ${interaction.user.displayName}`)
+                .setDescription(`<@${interaction.user.id}>`)
+                .addFields(
+                    { name: 'Teamwunsch', value: teamPreference },
+                    { name: 'PSN / EA-Name', value: eaId },
+                    { name: 'Fahrernummer', value: fahrernummer, inline: true },
+                    { name: 'KI-Stärke', value: ki, inline: true },
+                    { name: 'Lenkrad / Controller', value: inputDevice, inline: true }
+                )
+                .setColor(0xae00ff)
+                .setTimestamp()
+                .setThumbnail('attachment://formular.png')
+                
+            await interaction.reply({ embeds: [embed], files: [file], components: [buttonRow] });
         }
-        else if (interaction.isSelectMenu()) {
-            try {
-                await interaction.deferUpdate(); // Acknowledge the interaction
+        else if (interaction.customId === 'application-accepted') {
+            const member = await interaction.guild.members.fetch(applyingUser.id);
 
-                // Process the selection
-                const selectedValue = interaction.values[0];
-                console.log(`${interaction.user.tag} selected ${selectedValue}`);
-
-                // Update the message or send a follow-up message
-                await interaction.editReply({
-                    content: `You have selected: ${selectedValue}`
-                });
-
-            } catch (error) {
-                console.error('Error handling select menu interaction:', error);
-                // Respond with an error message to the user, if necessary
-                await interaction.followUp({
-                    content: 'There was an error processing your selection.',
-                    ephemeral: true
-                });
-            }
+            await member.setNickname(`${fahrernummer}|${applyingUser.displayName}|${teamPreference}`);
+            await interaction.reply({ content: 'Die Bewerbung von ' + applyingUser.displayName + ' wurde angenommen!'});
+        }
+        else if (interaction.customId === 'application-rejected') {
+            await interaction.reply({ content: 'Die Bewerbung von ' + applyingUser.displayName + ' wurde abgelehnt!'});
         }
     }
 }
