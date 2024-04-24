@@ -1,6 +1,7 @@
 const {ActionRowBuilder,AttachmentBuilder, TextInputStyle,ButtonStyle, ModalBuilder, TextInputBuilder, ButtonBuilder, EmbedBuilder} = require("discord.js");
 const loadSettings = require("../functions/loadSettings");
 const fs = require('fs');
+const fetchDataFromBackend = require("../functions/dataClient");
 
 
 let applyingUser = ''
@@ -73,9 +74,13 @@ module.exports = {
             inputDevice = interaction.fields.getTextInputValue('input-device');
             teamPreference = interaction.fields.getTextInputValue('team-preference');
             const file = new AttachmentBuilder('./src/images/formular.png');
-
+            const alldata = (await fetchDataFromBackend()).data;
             applyingUser = interaction.user;
 
+            if (alldata[fahrernummer+1] != null){
+                return interaction.reply({content: 'Deine angegebene Fahrernummer ist schon vergeben. Bitte wähle eine freie Nummer.', ephemeral: true})
+            }
+            
             const userImage = interaction.user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 });
 
             const buttonRow = new ActionRowBuilder()
