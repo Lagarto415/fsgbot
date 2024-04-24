@@ -1,30 +1,32 @@
+const mysql = require('mysql2');
+
+// MySQL connection configuration
+const pool = mysql.createPool({
+  host: '185.166.39.80',
+  user: 'root',
+  database: 'fsg',
+  password: 'otto1.',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+}).promise();
+
+// Express app setup (assuming you have already installed and imported express)
 const express = require('express');
-const { Pool } = require('pg');
-
 const app = express();
-const port = 3000; // Choose your desired port
-
-// PostgreSQL connection configuration
-const pool = new Pool({
-    user: 'postgres',
-    host: '185.166.39.80',
-    database: 'postgres',
-    password: 'admin',
-    port: 5432
-});
+const port = 3000; // The port your Express server will listen on
 
 // Define API endpoints
-app.get('/api/data', (req, res) => {
-    pool.query('SELECT * FROM "Fahrer"."Fahrer"', (error, results) => {
-        if (error) {
-            res.status(500).json({ error: 'Internal server error' });
-            return;
-        }
-        res.json(results.rows);
-    });
+app.get('/api/data', async (req, res) => {
+    try {
+        const [results, fields] = await pool.query('SELECT * FROM fsgTable');
+        res.json(results);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
-// Start the server
 app.listen(port, () => {
-    console.log(`Server is listening on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });
