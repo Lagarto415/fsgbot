@@ -5,7 +5,7 @@ const path = require('path')
 module.exports = {
     data: new SlashCommandBuilder()
     .setName('ping')
-    .setDescription('Check for Bot availability'),
+    .setDescription('Prüfe ob der Bot aktiv ist.'),
 
     async execute(interaction) {
         let pingJSON = []

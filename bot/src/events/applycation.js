@@ -1,7 +1,7 @@
-const {ActionRowBuilder,AttachmentBuilder, TextInputStyle,ButtonStyle, ModalBuilder, TextInputBuilder, ButtonBuilder, EmbedBuilder} = require("discord.js");
+const {ActionRowBuilder,AttachmentBuilder, TextInputStyle, ModalBuilder, TextInputBuilder, ButtonBuilder, EmbedBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder} = require("discord.js");
 const loadSettings = require("../functions/loadSettings");
-const fs = require('fs');
 const fetchDataFromBackend = require("../functions/dataClient");
+const updateDriver = require("../backend/uploadToDB");
 
 
 let applyingUser = ''
@@ -9,15 +9,34 @@ let ki = '';
 let fahrernummer = '';
 let eaId = '';
 let inputDevice = '';
+let TeamRole;
 let teamPreference = '';
 
 module.exports = {
     name: "interactionCreate",
-    async execute(interaction) {
+    async execute(interaction, client) {
+        const nummerChannel = client.channels.cache.get(loadSettings(interaction.guild.id).channels.numberchannel);
         
-        if (!interaction.isButton() && !interaction.isModalSubmit()) return;
-
+        if (!interaction.isButton() && !interaction.isModalSubmit() && !interaction.isStringSelectMenu()) return;
         if (interaction.customId == "application") {
+            const allTeams = ["Red Bull", "Ferrari", "McLaren", "Mercedes", "Aston Martin", "Alpha Tauri", "Haas", "Williams", "Alpine", "Alfa Romeo", "Ersatzfahrer"]
+            const sel1 = new StringSelectMenuBuilder()
+                .setCustomId('application-selector')
+                .setPlaceholder('Wunschteam auswählen')
+                .addOptions(allTeams.map(team => ({
+                    label: team,
+                    value: team  // Using the exact string from the array
+                })));
+        
+            const row = new ActionRowBuilder()
+                .addComponents(sel1);
+        
+            await interaction.reply({ components: [row], ephemeral: true });
+        }        
+
+        else if (interaction.customId == "application-selector") {
+            if (interaction.isStringSelectMenu() && interaction.values && interaction.values.length > 0) {
+                teamPreference = interaction.values[0];
             // Code for showing initial modal
             const modal = new ModalBuilder()
                 .setCustomId('application-modal')
@@ -54,34 +73,48 @@ module.exports = {
                             .setStyle(TextInputStyle.Short)
                             .setPlaceholder('Lenkrad / Controller')
                             .setRequired(true)
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId('team-preference')
-                            .setLabel('Teamwunsch')
-                            .setStyle(TextInputStyle.Short)
-                            .setPlaceholder('Für welches Team willst du fahren?')
-                            .setRequired(true)
                     )
                 );
             await interaction.showModal(modal);
         }
+    }
         else if (interaction.customId === 'application-modal' && interaction.isModalSubmit()) {
             // Processing modal submission
-            ki = interaction.fields.getTextInputValue('KI');
-            fahrernummer = interaction.fields.getTextInputValue('fahrernummer');
+            ki = parseInt(interaction.fields.getTextInputValue('KI'));
+            fahrernummer = parseInt(interaction.fields.getTextInputValue('fahrernummer'));
             eaId = interaction.fields.getTextInputValue('eaId');
             inputDevice = interaction.fields.getTextInputValue('input-device');
-            teamPreference = interaction.fields.getTextInputValue('team-preference');
             const file = new AttachmentBuilder('./src/images/formular.png');
             const alldata = (await fetchDataFromBackend()).data;
+            const fahrerfeld = client.channels.cache.get(loadSettings(interaction.guildId).channels.fahrerfeld);
+            const newAppChannel = client.channels.cache.get(loadSettings(interaction.guildId).channels.newApplications);
             applyingUser = interaction.user;
 
-            if (alldata[fahrernummer+1] != null){
-                return interaction.reply({content: 'Deine angegebene Fahrernummer ist schon vergeben. Bitte wähle eine freie Nummer.', ephemeral: true})
+            console.log("Fahrernummer: "+ alldata[fahrernummer-1].driverNumber);
+            console.log("Displayname: "+ alldata[fahrernummer-1].displayName);
+
+
+            const driverData = alldata.find(driver => driver.driverNumber === fahrernummer);
+            if (driverData && driverData.displayName) {
+                if(driverData.discordId != 'X'){
+                    return interaction.reply({
+                        content: `Deine angegebene Fahrernummer (${fahrernummer}) ist nicht verfügbar, sie gehört <@${driverData.discordId}>. Bitte wähle eine freie Nummer. ${nummerChannel}`,
+                        ephemeral: true
+                    });
+                }
+                else{
+                    return interaction.reply({content: `Deine angegebene Fahrernummer (${fahrernummer}) ist nicht verfügbar. Bitte wähle eine freie Nummer. ${nummerChannel}`, ephemeral: true})
+                }
             }
-            
-            const userImage = interaction.user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 });
+            else if ( ki > 110 || ki <= 0) {
+                return interaction.reply({content: `Deine angegebene KI-Stärke (${ki}) ist ungültig.`, ephemeral: true})
+            }
+            if (! await checkIfTeamIsFree(teamPreference)){
+                return interaction.reply({content: `Dein angegebener Teamwunsch (${teamPreference}) ist nicht verfügbar.\nWenn im ${fahrerfeld} keine Plätze mehr frei sind, gib **Ersatzfahrer** als Team an.`, ephemeral: true})
+            }
+
+            ki = ki.toString();
+            fahrernummer = fahrernummer.toString();
 
             const buttonRow = new ActionRowBuilder()
                 .addComponents(
@@ -110,17 +143,53 @@ module.exports = {
                 .setColor(0xae00ff)
                 .setTimestamp()
                 .setThumbnail('attachment://formular.png')
+
+            const AdminRole = interaction.guild.roles.cache.get(loadSettings(interaction.guildId).roles.admin);
                 
-            await interaction.reply({ embeds: [embed], files: [file], components: [buttonRow] });
+            await newAppChannel.send({ embeds: [embed], files: [file], components: [buttonRow], content: `${AdminRole}` });
+            await interaction.reply({ content: `Deine Bewerbung wurde abgeschickt.`, ephemeral: true });
         }
         else if (interaction.customId === 'application-accepted') {
             const member = await interaction.guild.members.fetch(applyingUser.id);
 
+            await updateDriver(fahrernummer, applyingUser.displayName, teamPreference, member.id);
+
             await member.setNickname(`${fahrernummer}|${applyingUser.displayName}|${teamPreference}`);
-            await interaction.reply({ content: 'Die Bewerbung von ' + applyingUser.displayName + ' wurde angenommen!'});
+            try{
+                await interaction.message.delete()
+            }
+            catch(error){
+                console.log("Failed to delete Message: "+error)
+            }
+            await applyingUser.send('Wir freuen uns dich in der FSG Willkommen zu heißen. Deine Bewerbung wurde angenommen. Vielen Spaß bei der FSG.')
+            await interaction.reply({ content: `Die Bewerbung von <@${applyingUser.id}> wurde von <@${interaction.user.id}> angenommen.`});
         }
         else if (interaction.customId === 'application-rejected') {
-            await interaction.reply({ content: 'Die Bewerbung von ' + applyingUser.displayName + ' wurde abgelehnt!'});
+            await applyingUser.send('Leider wurde deine Bewerbung abgelehnt. Versuche es später noch einmal.')
+            try{
+                await interaction.message.delete()
+            }
+            catch(error){
+                console.log("Failed to delete Message: "+error)
+            }
+            await interaction.reply({ content: `Die Bewerbung von <@${applyingUser.id}> wurde von <@${interaction.user.id}> abgelehnt.`});
         }
+    }
+}
+
+async function checkIfTeamIsFree(teamName) {
+    const fetch = (await import('node-fetch')).default;
+    const backendUrl = `http://localhost:3000/team-count/${encodeURIComponent(teamName)}`;
+
+    try {
+        const response = await fetch(backendUrl);
+        if (!response.ok) {
+            throw new Error(`Error fetching data: ${response.statusText}`);
+        }
+        const isFree = await response.json();
+        return isFree; // Returns true if the team is free, false otherwise
+    } catch (error) {
+        console.error('Failed to check if team is free:', error);
+        return false; // Assume not free if there's an error
     }
 }

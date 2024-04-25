@@ -1,10 +1,6 @@
 const { Client, IntentsBitField, Collection, Partials } = require('discord.js');
 
 const fs = require('fs');
-const path = require('path');
-const axios = require('axios');
-const loadDatabaseData = require('./backend/backend');
-const fetchDataFromBackend = require('./functions/dataClient');
 
 require('dotenv').config();
 
@@ -37,8 +33,8 @@ const commandFolders = fs.readdirSync("./src/commands");
     client.handleEvents(eventFiles, "./src/events");
     client.handleCommands(commandFolders, "./src/commands");
 })();
+
 const fsgToken = process.env.FSG_TOKEN;
 const testToken = process.env.TEST_TOKEN;
-
 
 client.login(testToken)

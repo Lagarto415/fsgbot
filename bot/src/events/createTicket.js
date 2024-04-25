@@ -66,6 +66,14 @@ module.exports = {
                 .setLabel('Bug Report')
                 .setDescription('Du möchtest einen Bug melden')
                 .setValue('bug-report'),
+                new StringSelectMenuOptionBuilder()
+                .setLabel('Auswertung')
+                .setDescription('Auswertung des letzten Rennens')
+                .setValue('auswertung'),
+                new StringSelectMenuOptionBuilder()
+                .setLabel('An/Abmeldung')
+                .setDescription('An/Abmeldung')
+                .setValue('an-und-abmeldung'),
             ])
 
             const reasonRow = new ActionRowBuilder()
@@ -89,6 +97,12 @@ module.exports = {
                     break;
                 case 'bug-report':
                     handleBugReport();
+                    break;
+                case 'auswertung':
+                    handleAuswertung();
+                    break;
+                case 'an-und-abmeldung':
+                    handleAnAbmeldung();
                     break;
                 default:
                     console.log("No valid reason selected");
@@ -137,6 +151,27 @@ module.exports = {
 
                 newTicket('dnf',interaction.user.id, 'Rennvorfall', interaction)
             }
+            async function handleAuswertung(){
+                console.log("Auswertung selected");
+                TicketOpenEmbed = new EmbedBuilder()
+                .setTitle('Auswertung')
+                .setColor(0xae00ff)
+                .addFields({ name: 'Von:', value: interaction.user.toString()})
+                .setTimestamp()
+
+                newTicket('auswertung',interaction.user.id, 'Rennvorfall', interaction)
+            }
+            async function handleAnAbmeldung(){
+                console.log("An und Abmeldung selected");
+                TicketOpenEmbed = new EmbedBuilder()
+                .setTitle('An und Abmeldung')
+                .setColor(0xae00ff)
+                .addFields({ name: 'Von:', value: interaction.user.toString()})
+                .setTimestamp()
+
+                newTicket('an-und-abmeldung',interaction.user.id, 'Rennvorfall', interaction)
+            }
+            
         }
         else if(interaction.isUserSelectMenu()){
             if (interaction.customId == 'rennvorfall'){

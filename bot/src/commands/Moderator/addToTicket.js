@@ -4,7 +4,7 @@ const loadSettings = require('../../functions/loadSettings');
 module.exports = {
     data: new SlashCommandBuilder()
     .setName('add')
-    .setDescription('Add User to the ticket')
+    .setDescription('Fügt einen User zum Ticket hinzu')
     .addUserOption(option => option.setName('user').setDescription('user').setRequired(true)),
 
     async execute(interaction, client) {
@@ -29,7 +29,7 @@ module.exports = {
             ReadMessageHistory: true
         });
 
-        await interaction.reply({ content: `${userToRemove} has been added to the ticket.`, ephemeral: false });
+        await interaction.reply({ content: `${userToRemove} wurde dem Ticket hinzugefügt.`, ephemeral: false });
 
     } catch (err) {
         console.error("Error removing user from ticket:", err);

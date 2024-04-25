@@ -4,22 +4,22 @@ const loadSettings = require('../../functions/loadSettings');
 module.exports = {
     data: new SlashCommandBuilder()
     .setName('remove')
-    .setDescription('Remove User from the ticket')
+    .setDescription('Entfernt einen User aus dem Ticket')
     .addUserOption(option => option.setName('user').setDescription('user').setRequired(true)),
 
     async execute(interaction, client) {
 
-    if (interaction.channel.parent == loadSettings(interaction.guild.id).ticketCategory) {
+    if (interaction.channel.parent == loadSettings(interaction.guild.id).categories.ticketCategory) {
         const userToRemove = interaction.options.getUser('user');
         const ticketChannel = interaction.channel;
 
         // Error Handling
         if (!ticketChannel.isTextBased()) { 
-            return interaction.reply({ content: "This command can only be used in a ticket channel!", ephemeral: true });
+            return interaction.reply({ content: "ERROR: This command can only be used in a ticket channel!", ephemeral: true });
         }
 
         if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageChannels)) {
-            return interaction.reply({ content: "You don't have permission to manage this ticket channel!", ephemeral: true });
+            return interaction.reply({ content: "ERROR: Du darfst den Command nicht benutzen", ephemeral: true });
         } 
 
         try {
@@ -29,15 +29,15 @@ module.exports = {
                 ReadMessageHistory: false
             });
 
-            await interaction.reply({ content: `${userToRemove} has been removed from the ticket.`, ephemeral: false });
+            await interaction.reply({ content: `${userToRemove} wurde aus dem Ticket entfernt.`, ephemeral: false });
 
         } catch (err) {
             console.error("Error removing user from ticket:", err);
-            await interaction.reply({ content: "An error occurred while removing the user.", ephemeral: true });
+            await interaction.reply({ content: "An error occurred while removing the user: " + err, ephemeral: true });
         }    
     }
     else {
-        interaction.reply({ content: "Cannot use command here", ephemeral: true})
+        interaction.reply({ content: "Du kannst den Command nur in Tickets benutzen", ephemeral: true})
     }
     }
 }

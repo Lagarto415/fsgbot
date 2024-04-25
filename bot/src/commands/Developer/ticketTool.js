@@ -3,7 +3,7 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommand
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('create-ticket-creator')
-        .setDescription('Create a ticket creator panel'),
+        .setDescription('Erstellt ein Ticket-erstellen Panel'),
 
     async execute(interaction) {
         const file = new AttachmentBuilder('./src/images/ticket.png');

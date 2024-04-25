@@ -4,7 +4,7 @@ const settings = require('../../settings.json')
 module.exports = {
     data: new SlashCommandBuilder()
     .setName('ban')
-    .setDescription('Ban a user')
+    .setDescription('einen User bannen')
     .addUserOption(option => option.setName('user').setDescription('user').setRequired(true))
     .addStringOption(option => option.setName('reason').setDescription('reason').setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
