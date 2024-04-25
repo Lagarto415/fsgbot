@@ -2,9 +2,11 @@ const { EmbedBuilder } = require("discord.js");
 const loadSettings = require("../functions/loadSettings");
 const updateDriver = require("../backend/uploadToDB");
 
+
 module.exports = {
     name: 'guildMemberRemove',
-    async execute (member) {
+    async execute (member, client) {
+        const updateNumbermessage = require("../functions/updateNumbermessage")(client);
         console.log(`Member ${member.user.username} left the Server!`);
         
         try {
@@ -14,6 +16,7 @@ module.exports = {
 
             // Ensure updateDriver is awaited so errors within it are properly caught
             await updateDriver(number, null, null, null);
+            await updateNumbermessage(member.guild.id);
         } catch (err) {
             console.error("Error processing member departure:", err);
         }

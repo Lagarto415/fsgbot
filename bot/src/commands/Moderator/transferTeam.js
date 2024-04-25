@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
 const updateDriver = require("../../backend/uploadToDB");
 
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('transfer-team')
@@ -21,7 +22,8 @@ module.exports = {
                 .setRequired(true)
         ),
 
-    async execute(interaction) {
+    async execute(interaction, client) {
+        const updateNumbermessage = require("../../functions/updateNumbermessage")(client);
         const targetUserId = interaction.options.getUser('user').id;
         const sourceRole = interaction.options.getRole('role1');
         const targetRole = interaction.options.getRole('role2');
@@ -53,6 +55,8 @@ module.exports = {
         updateDriver(number, parts[1], targetRole.name,targetUserId);
 
         await member.setNickname(`${number}|${member.user.displayName}|${targetRole.name}`);
+
+        await updateNumbermessage(interaction.guildId);
 
         await interaction.reply({
             content: `${member.user.displayName} hat das Team gewechselt. (${sourceRole.name} => ${targetRole.name})`,

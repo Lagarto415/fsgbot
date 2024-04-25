@@ -16,6 +16,7 @@ module.exports = {
     name: "interactionCreate",
     async execute(interaction, client) {
         const nummerChannel = client.channels.cache.get(loadSettings(interaction.guild.id).channels.numberchannel);
+        const updateNumbermessage = require("../functions/updateNumbermessage")(client);
         
         if (!interaction.isButton() && !interaction.isModalSubmit() && !interaction.isStringSelectMenu()) return;
         if (interaction.customId == "application") {
@@ -153,6 +154,7 @@ module.exports = {
             const member = await interaction.guild.members.fetch(applyingUser.id);
 
             await updateDriver(fahrernummer, applyingUser.displayName, teamPreference, member.id);
+            await updateNumbermessage(interaction.guildId);
 
             await member.setNickname(`${fahrernummer}|${applyingUser.displayName}|${teamPreference}`);
             try{
