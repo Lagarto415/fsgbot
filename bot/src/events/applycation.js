@@ -152,12 +152,12 @@ module.exports = {
         }
         else if (interaction.customId === 'application-accepted') {
             const member = await interaction.guild.members.fetch(applyingUser.id);
-            const role = client.roles.cache.get(loadSettings(interaction.guild.id).roles.interaction.values[0])
+            // const role = interaction.guild.roles.cache.get(loadSettings(interaction.guild.id).roles.interaction.values[0])
 
             await updateDriver(fahrernummer, applyingUser.displayName, teamPreference, member.id);
             await updateNumbermessage(interaction.guildId);
 
-            await member.roles.add(role);
+            // await member.roles.add(role);
             await member.setNickname(`${fahrernummer}|${applyingUser.displayName}|${teamPreference}`);
             try{
                 await interaction.message.delete()

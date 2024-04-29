@@ -6,7 +6,7 @@ require('dotenv').config()
 const fsgClient = '1224389690510278696'
 const testClient = '1224734906811416748'
 
-const clientId = fsgClient; 
+const clientId = testClient; 
 
 module.exports = (client) => {
     client.handleCommands = async (commandFolders, path) => {
@@ -22,7 +22,7 @@ module.exports = (client) => {
 
         const rest = new REST({
             version: '9'
-        }).setToken(process.env.FSG_TOKEN);
+        }).setToken(process.env.TEST_TOKEN);
 
         (async () => {
             try {
