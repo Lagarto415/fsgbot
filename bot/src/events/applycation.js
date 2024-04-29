@@ -20,7 +20,7 @@ module.exports = {
         
         if (!interaction.isButton() && !interaction.isModalSubmit() && !interaction.isStringSelectMenu()) return;
         if (interaction.customId == "application") {
-            const allTeams = ["Red Bull", "Ferrari", "McLaren", "Mercedes", "Aston Martin", "Alpha Tauri", "Haas", "Williams", "Alpine", "Alfa Romeo", "Ersatzfahrer"]
+            const allTeams = ["RedBull", "Ferrari", "McLaren", "Mercedes", "Aston Martin", "Alpha Tauri", "Haas", "Williams", "Alpine", "Alfa Romeo", "Ersatzfahrer"]
             const sel1 = new StringSelectMenuBuilder()
                 .setCustomId('application-selector')
                 .setPlaceholder('Wunschteam auswählen')
@@ -152,10 +152,12 @@ module.exports = {
         }
         else if (interaction.customId === 'application-accepted') {
             const member = await interaction.guild.members.fetch(applyingUser.id);
+            const role = client.roles.cache.get(loadSettings(interaction.guild.id).roles.interaction.values[0])
 
             await updateDriver(fahrernummer, applyingUser.displayName, teamPreference, member.id);
             await updateNumbermessage(interaction.guildId);
 
+            await member.roles.add(role);
             await member.setNickname(`${fahrernummer}|${applyingUser.displayName}|${teamPreference}`);
             try{
                 await interaction.message.delete()
