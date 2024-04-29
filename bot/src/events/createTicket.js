@@ -46,6 +46,7 @@ module.exports = {
         
         
         else if(interaction.customId.startsWith("ticket-init")){
+            const member = await interaction.guild.members.fetch(interaction.user.id);
             const reasonSelection = new StringSelectMenuBuilder()
             .setCustomId('reason-selection')
             .setPlaceholder('Warum möchtest du das Ticket erstellen?')
@@ -66,15 +67,16 @@ module.exports = {
                 .setLabel('Bug Report')
                 .setDescription('Du möchtest einen Bug melden')
                 .setValue('bug-report'),
-                new StringSelectMenuOptionBuilder()
-                .setLabel('Auswertung')
-                .setDescription('Auswertung des letzten Rennens')
-                .setValue('auswertung'),
-                new StringSelectMenuOptionBuilder()
-                .setLabel('An/Abmeldung')
-                .setDescription('An/Abmeldung')
-                .setValue('an-und-abmeldung'),
             ])
+
+            if (member.roles.cache.has(fiaRole) || member.roles.cache.has(adminRole)) {
+                reasonSelection.addOptions([
+                    new StringSelectMenuOptionBuilder()
+                    .setLabel('Auswertung & An/Abmeldung')
+                    .setDescription('Auswertung & An/Abmeldung')
+                    .setValue('auswertung'),
+                ])
+            }
 
             const reasonRow = new ActionRowBuilder()
             .addComponents(reasonSelection)
@@ -100,8 +102,6 @@ module.exports = {
                     break;
                 case 'auswertung':
                     handleAuswertung();
-                    break;
-                case 'an-und-abmeldung':
                     handleAnAbmeldung();
                     break;
                 default:
