@@ -11,12 +11,14 @@ let eaId = '';
 let inputDevice = '';
 let TeamRole;
 let teamPreference = '';
+let f1Role;
 
 module.exports = {
     name: "interactionCreate",
     async execute(interaction, client) {
         const nummerChannel = client.channels.cache.get(loadSettings(interaction.guild.id).channels.numberchannel);
         const updateNumbermessage = require("../functions/updateNumbermessage")(client);
+        f1Role = interaction.guild.roles.cache.get(loadSettings(interaction.guildId).roles.F1Driver);
         
         if (!interaction.isButton() && !interaction.isModalSubmit() && !interaction.isStringSelectMenu()) return;
         if (interaction.customId == "application") {
@@ -167,6 +169,7 @@ module.exports = {
             await updateNumbermessage(interaction.guildId);
 
             await member.roles.add(role);
+            await member.roles.add(f1Role);
             await member.setNickname(`${fahrernummer}|${applyingUser.displayName}|${teamPreference}`);
             try{
                 await interaction.message.delete()
