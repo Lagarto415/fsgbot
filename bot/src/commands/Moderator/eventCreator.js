@@ -1,5 +1,5 @@
 const { ModalBuilder, ActionRowBuilder, TextInputBuilder, SlashCommandBuilder, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ComponentType, EmbedBuilder } = require("discord.js"); 
-const loadTracks = require("../src/functions/loadTracks");
+const loadTracks = require("../../functions/loadTracks");
 
 module.exports = {
     data: new SlashCommandBuilder()

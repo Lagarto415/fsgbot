@@ -1,10 +1,30 @@
 const { EmbedBuilder } = require("@discordjs/builders");
-const loadTracks = require("../src/functions/loadTracks");
+const loadTracks = require("../functions/loadTracks");
 const { StringSelectMenuOptionBuilder, StringSelectMenuBuilder, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ButtonBuilder, MessageComponentInteraction, ButtonStyle, Message } = require("discord.js");
-const tracksJSON = require("../src/data/tracks.json");
+const tracksJSON = require("../data/tracks.json");
 
 let event_type;
 let track;
+let eventDateTime;
+
+function updateUserListAndCount(field, userId, addingUser) {
+    // Check if the field already has a count and remove it for updating
+    let baseName = field.name.replace(/\s\(\d+\)$/, '');
+    
+    if (addingUser) {
+        field.value = field.value === '\u200b' ? userId : `${field.value}\n${userId}`;
+    } else {
+        field.value = field.value.replace(userId, '').trim().replace(/\n{2,}/g, '\n') || '\u200b';
+    }
+    const count = field.value === '\u200b' ? 0 : field.value.split('\n').length;
+    field.name = `${baseName} (${count})`;
+}
+
+function isWithinTimeLimit(eventDateTime) {
+    const now = new Date();
+    const timeLimit = new Date(eventDateTime.getTime() - 4 * 60 * 60 * 1000); // 4 hours before the event
+    return now >= timeLimit;
+}
 
 module.exports = {
     name: 'interactionCreate',
@@ -79,7 +99,7 @@ module.exports = {
             const [day, month, year] = date.split('/');
             const [hours, minutes] = time.split(':');
 
-            const eventDateTime = new Date(year, month - 1, day, hours, minutes); // Month is zero-indexed
+            eventDateTime = new Date(year, month - 1, day, hours, minutes); // Month is zero-indexed
             const eventEndTime = new Date(eventDateTime); // Create a copy
             eventEndTime.setHours(eventEndTime.getHours() + 2); // Add 2 hours
             const eventEndTimestamp = Math.floor(eventEndTime.getTime() / 1000); 
@@ -108,7 +128,7 @@ module.exports = {
                     new ButtonBuilder()
                     .setStyle('Success')
                     .setCustomId('event-accept')
-                    .setEmoji('✅'),
+                    .setEmoji('✔️'),
                     new ButtonBuilder()
                     .setStyle('Danger')
                     .setCustomId('event-deny')
@@ -123,96 +143,38 @@ module.exports = {
                 embed.setTitle(`${trackEmj} Großer Preis von ${track} ${trackEmj}`)
             }
 
-            await interaction.channel.send({ embeds: [embed], components: [row] });
+            await interaction.channel.send({ embeds: [embed], components: [row], content: `@everyone` });
             await interaction.reply({ content: 'Event erstellt', ephemeral: true });
 
         }
         else if (interaction.customId === 'event-accept' || interaction.customId === 'event-deny' || interaction.customId === 'event-tentitive') {
+        
+            if (isWithinTimeLimit(eventDateTime)) {
+                await interaction.reply({ content: 'Die Anmeldefrist ist abgelaufen', ephemeral: true });
+                return;
+            }
+        
             const user = interaction.user;
             const userId = `<@${user.id}>`;
             const message = interaction.message;
             const embed = message.embeds[0];
+            const action = interaction.customId.split('-')[1];
         
-            // Find all three fields for acceptance, denial, and uncertainty
-            const acceptedField = embed.fields.find(field => field.name === ':white_check_mark: Angemeldet');
-            const deniedField = embed.fields.find(field => field.name === ':x: Abgemeldet');
-            const uncertainField = embed.fields.find(field => field.name === ':grey_question: Noch unklar');
+            const fields = {
+                accept: embed.fields.find(field => field.name.startsWith(':white_check_mark:')),
+                deny: embed.fields.find(field => field.name.startsWith(':x:')),
+                tentitive: embed.fields.find(field => field.name.startsWith(':grey_question:'))
+            };
         
-            // Check if the user is already in any of the columns
-            const isInAccepted = acceptedField && acceptedField.value.includes(userId);
-            const isInDenied = deniedField && deniedField.value.includes(userId);
-            const isInUncertain = uncertainField && uncertainField.value.includes(userId);
+            Object.keys(fields).forEach(key => {
+                if (action === key && !fields[key].value.includes(userId)) {
+                    updateUserListAndCount(fields[key], userId, true);
+                } else if (fields[key].value.includes(userId)) {
+                    updateUserListAndCount(fields[key], userId, false);
+                }
+            });
         
-            // Remove user from the current column if the button corresponding to that column is pressed
-            if (interaction.customId === 'event-accept' && isInAccepted) {
-                acceptedField.value = acceptedField.value.replace(userId, '');
-                acceptedField.value = acceptedField.value.trim().replace(/\n{2,}/g, '\n');
-            } else if (interaction.customId === 'event-deny' && isInDenied) {
-                deniedField.value = deniedField.value.replace(userId, '');
-                deniedField.value = deniedField.value.trim().replace(/\n{2,}/g, '\n');
-            } else if (interaction.customId === 'event-tentitive' && isInUncertain) {
-                uncertainField.value = uncertainField.value.replace(userId, '');
-                uncertainField.value = uncertainField.value.trim().replace(/\n{2,}/g, '\n');
-            }
-        
-            // Add user to the target column if the button corresponding to that column is pressed
-            if (!isInAccepted && interaction.customId === 'event-accept') {
-                if (acceptedField) {
-                    if (acceptedField.value === '\u200b') {
-                        acceptedField.value = userId;
-                    } else {
-                        acceptedField.value += `\n${userId}`;
-                    }
-                }
-                // Remove user from other columns if they are present
-                if (deniedField) {
-                    deniedField.value = deniedField.value.replace(userId, '');
-                    deniedField.value = deniedField.value.trim().replace(/\n{2,}/g, '\n');
-                }
-                if (uncertainField) {
-                    uncertainField.value = uncertainField.value.replace(userId, '');
-                    uncertainField.value = uncertainField.value.trim().replace(/\n{2,}/g, '\n');
-                }
-            } else if (!isInDenied && interaction.customId === 'event-deny') {
-                if (deniedField) {
-                    if (deniedField.value === '\u200b') {
-                        deniedField.value = userId;
-                    } else {
-                        deniedField.value += `\n${userId}`;
-                    }
-                }
-                // Remove user from other columns if they are present
-                if (acceptedField) {
-                    acceptedField.value = acceptedField.value.replace(userId, '');
-                    acceptedField.value = acceptedField.value.trim().replace(/\n{2,}/g, '\n');
-                }
-                if (uncertainField) {
-                    uncertainField.value = uncertainField.value.replace(userId, '');
-                    uncertainField.value = uncertainField.value.trim().replace(/\n{2,}/g, '\n');
-                }
-            } else if (!isInUncertain && interaction.customId === 'event-tentitive') {
-                if (uncertainField) {
-                    if (uncertainField.value === '\u200b') {
-                        uncertainField.value = userId;
-                    } else {
-                        uncertainField.value += `\n${userId}`;
-                    }
-                }
-                // Remove user from other columns if they are present
-                if (acceptedField) {
-                    acceptedField.value = acceptedField.value.replace(userId, '');
-                    acceptedField.value = acceptedField.value.trim().replace(/\n{2,}/g, '\n');
-                }
-                if (deniedField) {
-                    deniedField.value = deniedField.value.replace(userId, '');
-                    deniedField.value = deniedField.value.trim().replace(/\n{2,}/g, '\n');
-                }
-            }
-        
-            // Edit the embed to reflect the changes
             await message.edit({ embeds: [embed] });
-        
-            // Acknowledge the interaction without sending any visible response
             await interaction.deferUpdate();
         }
         

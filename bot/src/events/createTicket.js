@@ -67,6 +67,10 @@ module.exports = {
                 .setLabel('Bug Report')
                 .setDescription('Du möchtest einen Bug melden')
                 .setValue('bug-report'),
+                new StringSelectMenuOptionBuilder()
+                .setLabel('Schnellste Rennrunde')
+                .setDescription('Schnellste Rennrunde')
+                .setValue('fastestLap'),
             ])
 
             if (member.roles.cache.has(fiaRole) || member.roles.cache.has(adminRole)) {
@@ -103,6 +107,9 @@ module.exports = {
                 case 'auswertung':
                     handleAuswertung();
                     handleAnAbmeldung();
+                    break;
+                case 'fastestLap':
+                    handleFastestLap();
                     break;
                 default:
                     console.log("No valid reason selected");
@@ -170,6 +177,16 @@ module.exports = {
                 .setTimestamp()
 
                 newTicket('an-und-abmeldung',interaction.user.id, 'Rennvorfall', interaction)
+            }
+            async function handleFastestLap(){
+                console.log("Fastest Lap selected");
+                TicketOpenEmbed = new EmbedBuilder()
+                .setTitle('Schnellste Rennrunde')
+                .setColor(0xae00ff)
+                .addFields({ name: 'Von:', value: interaction.user.toString()})
+                .setTimestamp()
+
+                newTicket('fastestLap',interaction.user.id, 'Rennvorfall', interaction)
             }
             
         }

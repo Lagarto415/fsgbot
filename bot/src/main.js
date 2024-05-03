@@ -37,4 +37,4 @@ const commandFolders = fs.readdirSync("./src/commands");
 const fsgToken = process.env.FSG_TOKEN;
 const testToken = process.env.TEST_TOKEN;
 
-client.login(fsgToken)
+client.login(testToken)
