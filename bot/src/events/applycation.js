@@ -4,191 +4,184 @@ const fetchDataFromBackend = require("../functions/dataClient");
 const updateDriver = require("../backend/uploadToDB");
 
 
-let applyingUser = ''
 let ki = '';
 let fahrernummer = '';
 let eaId = '';
 let inputDevice = '';
 let TeamRole;
-let teamPreference = '';
 let f1Role;
+
+const applicationState = {};
 
 module.exports = {
     name: "interactionCreate",
     async execute(interaction, client) {
-        const nummerChannel = client.channels.cache.get(loadSettings(interaction.guild.id).channels.numberchannel);
         const updateNumbermessage = require("../functions/updateNumbermessage")(client);
-        f1Role = interaction.guild.roles.cache.get(loadSettings(interaction.guildId).roles.F1Driver);
-        
+        const f1Role = interaction.guild.roles.cache.get(loadSettings(interaction.guild.id).roles.F1Driver);
+
         if (!interaction.isButton() && !interaction.isModalSubmit() && !interaction.isStringSelectMenu()) return;
-        if (interaction.customId == "application") {
-            const allTeams = ["RedBull", "Ferrari", "McLaren", "Mercedes", "Aston Martin", "Alpha Tauri", "Haas", "Williams", "Alpine", "Alfa Romeo", "Ersatzfahrer"]
-            const sel1 = new StringSelectMenuBuilder()
+
+        // Initiate the application process
+        if (interaction.customId === "application") {
+            const allTeams = ["RedBull", "Ferrari", "McLaren", "Mercedes", "Aston Martin", "Alpha Tauri", "Haas", "Williams", "Alpine", "Alfa Romeo", "Ersatzfahrer"];
+            const teamSelector = new StringSelectMenuBuilder()
                 .setCustomId('application-selector')
                 .setPlaceholder('Wunschteam auswählen')
-                .addOptions(allTeams.map(team => ({
-                    label: team,
-                    value: team  // Using the exact string from the array
-                })));
-        
-            const row = new ActionRowBuilder()
-                .addComponents(sel1);
-        
+                .addOptions(allTeams.map(team => ({ label: team, value: team })));
+
+            const row = new ActionRowBuilder().addComponents(teamSelector);
             await interaction.reply({ components: [row], ephemeral: true });
-        }        
+        }
 
-        else if (interaction.customId == "application-selector") {
+        // Handle team selection and show modal for additional data
+        else if (interaction.customId === "application-selector") {
             if (interaction.isStringSelectMenu() && interaction.values && interaction.values.length > 0) {
-                teamPreference = interaction.values[0];
-            // Code for showing initial modal
-            const modal = new ModalBuilder()
-                .setCustomId('application-modal')
-                .setTitle('FSG Fahrerbewerbung')
-                .addComponents(
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId('KI')
-                            .setLabel('KI Stärke')
-                            .setStyle(TextInputStyle.Short)
-                            .setPlaceholder('Deine ungefähre KI Stärke')
-                            .setRequired(true)
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId('fahrernummer')
-                            .setLabel('Gewünschte Fahrernummer')
-                            .setStyle(TextInputStyle.Short)
-                            .setPlaceholder('Welche Fahrernummer hättest du gerne?')
-                            .setRequired(true)
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId('eaId')
-                            .setLabel('PSN / EA-Name')
-                            .setStyle(TextInputStyle.Short)
-                            .setPlaceholder('PSN / EA-Name')
-                            .setRequired(true)
-                    ),
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId('input-device')
-                            .setLabel('Lenkrad / Controller')
-                            .setStyle(TextInputStyle.Short)
-                            .setPlaceholder('Lenkrad / Controller')
-                            .setRequired(true)
-                    )
-                );
-            await interaction.showModal(modal);
+                const teamPreference = interaction.values[0];
+
+                // Store team preference in application state
+                applicationState[interaction.user.id] = { teamPreference };
+
+                const modal = new ModalBuilder()
+                    .setCustomId('application-modal')
+                    .setTitle('FSG Fahrerbewerbung')
+                    .addComponents(
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder().setCustomId('KI').setLabel('KI Stärke').setStyle(TextInputStyle.Short).setPlaceholder('Deine ungefähre KI Stärke').setRequired(true)
+                        ),
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder().setCustomId('fahrernummer').setLabel('Gewünschte Fahrernummer').setStyle(TextInputStyle.Short).setPlaceholder('Welche Fahrernummer hättest du gerne?').setRequired(true)
+                        ),
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder().setCustomId('eaId').setLabel('PSN / EA-Name').setStyle(TextInputStyle.Short).setPlaceholder('PSN / EA-Name').setRequired(true)
+                        ),
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder().setCustomId('input-device').setLabel('Lenkrad / Controller').setStyle(TextInputStyle.Short).setPlaceholder('Lenkrad / Controller').setRequired(true)
+                        )
+                    );
+                await interaction.showModal(modal);
+            }
         }
-    }
+
+        // Handle modal submission
         else if (interaction.customId === 'application-modal' && interaction.isModalSubmit()) {
-            // Processing modal submission
-            ki = parseInt(interaction.fields.getTextInputValue('KI'));
-            fahrernummer = parseInt(interaction.fields.getTextInputValue('fahrernummer'));
-            eaId = interaction.fields.getTextInputValue('eaId');
-            inputDevice = interaction.fields.getTextInputValue('input-device');
-            const file = new AttachmentBuilder('./src/images/formular.png');
-            const alldata = (await fetchDataFromBackend()).data;
-            const fahrerfeld = client.channels.cache.get(loadSettings(interaction.guildId).channels.fahrerfeld);
-            const newAppChannel = client.channels.cache.get(loadSettings(interaction.guildId).channels.newApplications);
-            applyingUser = interaction.user;
+            try {
+                const userId = interaction.user.id;
+                const ki = parseInt(interaction.fields.getTextInputValue('KI'), 10);
+                const fahrernummer = parseInt(interaction.fields.getTextInputValue('fahrernummer'), 10);
+                const eaId = interaction.fields.getTextInputValue('eaId');
+                const inputDevice = interaction.fields.getTextInputValue('input-device');
 
-            console.log("Fahrernummer: "+ alldata[fahrernummer-1].driverNumber);
-            console.log("Displayname: "+ alldata[fahrernummer-1].displayName);
-
-
-            const driverData = alldata.find(driver => driver.driverNumber === fahrernummer);
-            if (driverData && driverData.displayName) {
-                if(driverData.discordId != 'X'){
-                    return interaction.reply({
-                        content: `Deine angegebene Fahrernummer (${fahrernummer}) ist nicht verfügbar, sie gehört <@${driverData.discordId}>. Bitte wähle eine freie Nummer. ${nummerChannel}`,
-                        ephemeral: true
-                    });
+                // Validate numeric values
+                if (isNaN(ki) || isNaN(fahrernummer) || ki <= 0 || ki > 110) {
+                    return interaction.reply({ content: `Deine Angaben sind ungültig.`, ephemeral: true });
                 }
-                else{
-                    return interaction.reply({content: `Deine angegebene Fahrernummer (${fahrernummer}) ist nicht verfügbar. Bitte wähle eine freie Nummer. ${nummerChannel}`, ephemeral: true})
+
+                // Retrieve team preference and update application state
+                const { teamPreference } = applicationState[userId] || {};
+                if (!teamPreference) {
+                    return interaction.reply({ content: `Fehler: Teamwunsch nicht gefunden. Bitte erneut auswählen.`, ephemeral: true });
                 }
+                if (await checkIfTeamIsFree(teamPreference) == false) {
+                    return interaction.reply({ content: `Fehler: Das angegebene Team ist nicht frei. Bitte erneut auswählen.`, ephemeral: true });
+                }
+
+                // Update state with all other data
+                applicationState[userId] = {
+                    teamPreference,
+                    ki,
+                    fahrernummer,
+                    eaId,
+                    inputDevice
+                };
+
+                const embed = new EmbedBuilder()
+                    .setTitle(`Fahrerbewerbung von ${interaction.user.displayName}`)
+                    .setDescription(`<@${interaction.user.id}>`)
+                    .addFields(
+                        { name: 'Teamwunsch', value: teamPreference },
+                        { name: 'PSN / EA-Name', value: eaId },
+                        { name: 'Fahrernummer', value: fahrernummer.toString(), inline: true },
+                        { name: 'KI-Stärke', value: ki.toString(), inline: true },
+                        { name: 'Lenkrad / Controller', value: inputDevice, inline: true }
+                    )
+                    .setColor(0xae00ff)
+                    .setTimestamp()
+                    .setThumbnail('attachment://formular.png');
+
+                const AdminRole = interaction.guild.roles.cache.get(loadSettings(interaction.guildId).roles.admin);
+                const file = new AttachmentBuilder('./src/images/formular.png');
+                const buttonRow = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder().setStyle('Success').setCustomId('application-accepted').setLabel('Annehmen').setEmoji('✅'),
+                    new ButtonBuilder().setStyle('Danger').setCustomId('application-rejected').setLabel('Ablehnen').setEmoji('✖️')
+                );
+
+                const newAppChannel = client.channels.cache.get(loadSettings(interaction.guild.id).channels.newApplications);
+                await newAppChannel.send({ embeds: [embed], files: [file], components: [buttonRow], content: `${AdminRole}` });
+                await interaction.reply({ content: `Deine Bewerbung wurde abgeschickt.`, ephemeral: true });
+            } catch (error) {
+                console.error('Error processing application modal:', error);
+                await interaction.reply({ content: 'Fehler bei der Verarbeitung der Bewerbung.', ephemeral: true });
             }
-            else if ( ki > 110 || ki <= 0) {
-                return interaction.reply({content: `Deine angegebene KI-Stärke (${ki}) ist ungültig.`, ephemeral: true})
-            }
-            if (! await checkIfTeamIsFree(teamPreference)){
-                return interaction.reply({content: `Dein angegebener Teamwunsch (${teamPreference}) ist nicht verfügbar.\nWenn im ${fahrerfeld} keine Plätze mehr frei sind, gib **Ersatzfahrer** als Team an.`, ephemeral: true})
-            }
-
-            ki = ki.toString();
-            fahrernummer = fahrernummer.toString();
-
-            const buttonRow = new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setStyle('Success')
-                        .setCustomId('application-accepted')
-                        .setLabel('Annehmen')
-                        .setEmoji('✅'),
-                    new ButtonBuilder()
-                        .setStyle('Danger')
-                        .setLabel('Ablehnen')
-                        .setCustomId('application-rejected')
-                        .setEmoji('✖️')
-                )
-
-            const embed = new EmbedBuilder()
-                .setTitle(`Fahrerbewerbung von ${interaction.user.displayName}`)
-                .setDescription(`<@${interaction.user.id}>`)
-                .addFields(
-                    { name: 'Teamwunsch', value: teamPreference },
-                    { name: 'PSN / EA-Name', value: eaId },
-                    { name: 'Fahrernummer', value: fahrernummer, inline: true },
-                    { name: 'KI-Stärke', value: ki, inline: true },
-                    { name: 'Lenkrad / Controller', value: inputDevice, inline: true }
-                )
-                .setColor(0xae00ff)
-                .setTimestamp()
-                .setThumbnail('attachment://formular.png')
-
-            const AdminRole = interaction.guild.roles.cache.get(loadSettings(interaction.guildId).roles.admin);
-                
-            await newAppChannel.send({ embeds: [embed], files: [file], components: [buttonRow], content: `${AdminRole}` });
-            await interaction.reply({ content: `Deine Bewerbung wurde abgeschickt.`, ephemeral: true });
         }
+
+        // Handle application acceptance
         else if (interaction.customId === 'application-accepted') {
-            let member;
-            console.log(teamPreference)
-            try{
-                member = await interaction.guild.members.fetch(applyingUser.id);
-            }
-            catch(error){
-                console.log("Failed to fetch member: "+error)
-                return
-            }
-            const settings = loadSettings(interaction.guildId);
-            const role = interaction.guild.roles.cache.get(settings.roles[teamPreference])
+            try {
+                await interaction.deferUpdate();
+                // Retrieve user ID from the embed description
+                const userId = interaction.message.embeds[0]?.description.match(/<@(\d+)>/)[1];
+                const applicationData = applicationState[userId] || {};
 
-            await updateDriver(fahrernummer, applyingUser.displayName, teamPreference, member.id);
-            await updateNumbermessage(interaction.guildId);
+                // If data is missing, send a fallback error
+                if (!applicationData.fahrernummer || !applicationData.teamPreference) {
+                    return interaction.reply({ content: 'Fehler bei der Annahme der Bewerbung: Daten nicht gefunden.', ephemeral: true });
+                }
 
-            await member.roles.add(role);
-            await member.roles.add(f1Role);
-            await member.setNickname(`${fahrernummer}|${applyingUser.displayName}|${teamPreference}`);
-            try{
-                await interaction.message.delete()
+                // Fetch user data from Discord
+                let member = await interaction.guild.members.fetch(userId);
+                const settings = loadSettings(interaction.guildId);
+                const role = interaction.guild.roles.cache.get(settings.roles[applicationData.teamPreference]);
+
+                // Update driver information
+                await updateDriver(applicationData.fahrernummer, member.displayName, applicationData.teamPreference, member.id);
+                await updateNumbermessage(interaction.guildId);
+
+                // Add roles only if the user doesn't have them
+                if (!member.roles.cache.has(role.id)) {
+                    await member.roles.add(role);
+                }
+                if (!member.roles.cache.has(f1Role.id)) {
+                    await member.roles.add(f1Role);
+                }
+
+                // Update the member's nickname
+                await member.setNickname(`${applicationData.fahrernummer}|${member.displayName}|${applicationData.teamPreference}`);
+
+                // Delete the interaction message
+                await interaction.message.delete();
+
+                // Send a direct message to the applying user
+                await member.send('Wir freuen uns dich in der FSG Willkommen zu heißen. Deine Bewerbung wurde angenommen.');
+
+                // Confirm the acceptance
+                await interaction.followUp({ content: `Die Bewerbung von <@${userId}> wurde angenommen.`, ephemeral: true });
+            } catch (error) {
+                console.error('Error processing application acceptance:', error);
+                await interaction.followUp({ content: 'Fehler bei der Annahme der Bewerbung.', ephemeral: true });
             }
-            catch(error){
-                console.log("Failed to delete Message: "+error)
-            }
-            await applyingUser.send('Wir freuen uns dich in der FSG Willkommen zu heißen. Deine Bewerbung wurde angenommen. Vielen Spaß bei der FSG.')
-            await interaction.reply({ content: `Die Bewerbung von <@${applyingUser.id}> wurde von <@${interaction.user.id}> angenommen.`});
         }
+
+        // Handle application rejection
         else if (interaction.customId === 'application-rejected') {
-            await applyingUser.send('Leider wurde deine Bewerbung abgelehnt. Versuche es später noch einmal.')
-            try{
-                await interaction.message.delete()
+            try {
+                const userId = interaction.message.embeds[0]?.description.match(/<@(\d+)>/)[1];
+                await interaction.guild.members.fetch(userId).then(member => member.send('Leider wurde deine Bewerbung abgelehnt. Versuche es später noch einmal.'));
+                await interaction.message.delete();
+                await interaction.reply({ content: `Die Bewerbung von <@${userId}> wurde abgelehnt.`, ephemeral: true });
+            } catch (error) {
+                console.error('Error processing application rejection:', error);
+                await interaction.reply({ content: 'Fehler bei der Ablehnung der Bewerbung.', ephemeral: true });
             }
-            catch(error){
-                console.log("Failed to delete Message: "+error)
-            }
-            await interaction.reply({ content: `Die Bewerbung von <@${applyingUser.id}> wurde von <@${interaction.user.id}> abgelehnt.`});
         }
     }
 }
@@ -197,13 +190,18 @@ async function checkIfTeamIsFree(teamName) {
     const fetch = (await import('node-fetch')).default;
     const backendUrl = `http://localhost:3000/team-count/${encodeURIComponent(teamName)}`;
 
+    console.log("Checking if team is free:", teamName);
+
     try {
         const response = await fetch(backendUrl);
         if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Backend error: ${response.status} - ${response.statusText}: ${errorText}`);
             throw new Error(`Error fetching data: ${response.statusText}`);
         }
         const isFree = await response.json();
-        return isFree; // Returns true if the team is free, false otherwise
+        console.log("Team is free:", isFree);
+        return isFree;
     } catch (error) {
         console.error('Failed to check if team is free:', error);
         return false; // Assume not free if there's an error

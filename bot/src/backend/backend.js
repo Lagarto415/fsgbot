@@ -33,49 +33,58 @@ app.put('/update-driver/:driverNumber', async (req, res) => {
   const { driverNumber } = req.params;
   const { displayName, team, discordId } = req.body;
 
-  // Check if fields exist in the request body, not necessarily non-null
+  // Log all received data for debugging purposes
+  console.log(`Received update request: driverNumber=${driverNumber}, displayName=${displayName}, team=${team}, discordId=${discordId}`);
+
+  // Ensure required fields are provided
   if (displayName === undefined || team === undefined || discordId === undefined) {
-    res.status(400).send('All fields (displayName, team, discordId) must be included, even if null.');
-    return;
+      return res.status(400).send('All fields (displayName, team, discordId) must be included.');
   }
 
   try {
-    const [result] = await pool.query(
-      'UPDATE fsgTable SET displayName = ?, team = ?, discordId = ? WHERE driverNumber = ?',
-      [displayName, team, discordId, driverNumber]
-    );
+      const [result] = await pool.query(
+          'UPDATE fsgTable SET displayName = ?, team = ?, discordId = ? WHERE driverNumber = ?',
+          [displayName, team, discordId, driverNumber]
+      );
 
-    if (result.affectedRows === 0) {
-      res.status(404).send('Driver not found.');
-    } else {
-      res.send('Driver updated successfully.');
-    }
+      // Log the results of the SQL query
+      console.log(`SQL Query Result: affectedRows=${result.affectedRows}`);
+
+      if (result.affectedRows === 0) {
+          return res.status(404).send('Driver not found.');
+      } else {
+          res.send('Driver updated successfully.');
+      }
   } catch (error) {
-    console.error(error);
-    res.status(500).send('Error updating driver.');
+      console.error('Error updating driver:', error);
+      res.status(500).send('Error updating driver.');
   }
 });
+
+
 
 app.get('/team-count/:teamName', async (req, res) => {
   let { teamName } = req.params;
   teamName = capitalizeFirstLetter(teamName);
 
-  if (teamName == "Ersatzfahrer" || teamName == "Kommentator") {
-    res.send(true)
+  // Respond if the team name is "Ersatzfahrer" or "Kommentator"
+  if (teamName === "Ersatzfahrer" || teamName === "Kommentator") {
+      return res.send(true);
   }
 
   try {
-    const [rows] = await pool.query(
-      'SELECT COUNT(*) AS teamCount FROM fsgTable WHERE team = ?',
-      [teamName]
-    );
-    const teamCount = rows[0].teamCount; // Access the count result
-    res.send(teamCount < 2)
+      const [rows] = await pool.query(
+          'SELECT COUNT(*) AS teamCount FROM fsgTable WHERE team = ?',
+          [teamName]
+      );
+      const teamCount = rows[0].teamCount;
+      res.send(teamCount < 2);
   } catch (error) {
-    console.error('Failed to retrieve team count:', error);
-    res.status(500).send({ error: 'Internal server error' });
+      console.error('Failed to retrieve team count:', error);
+      res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 app.listen(port, () => {
   console.log(`Backend server running on port ${port}`);
