@@ -71,6 +71,10 @@ module.exports = {
                 .setLabel('Schnellste Rennrunde')
                 .setDescription('Schnellste Rennrunde')
                 .setValue('fastestLap'),
+                new StringSelectMenuOptionBuilder()
+                .setLabel('Rennvorfall Einspruch')
+                .setDescription('Rennvorfall Einspruch')
+                .setValue('objection'),
             ])
 
             if (member.roles.cache.has(fiaRole) || member.roles.cache.has(adminRole)) {
@@ -110,6 +114,9 @@ module.exports = {
                     break;
                 case 'fastestLap':
                     handleFastestLap();
+                    break;
+                case 'objection':
+                    handleObjection();
                     break;
                 default:
                     console.log("No valid reason selected");
@@ -187,6 +194,14 @@ module.exports = {
                 .setTimestamp()
 
                 newTicket('fastestLap',interaction.user.id, 'Rennvorfall', interaction)
+            }
+            async function handleObjection(){
+                console.log("Objection selected");
+                TicketOpenEmbed = new EmbedBuilder()
+                .setTitle('Rennvorfall Einspruch')
+                .setColor(0xae00ff)
+                .addFields({ name: 'Von:', value: interaction.user.toString()})
+                .setTimestamp()
             }
             
         }
