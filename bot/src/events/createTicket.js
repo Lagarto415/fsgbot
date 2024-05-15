@@ -202,6 +202,8 @@ module.exports = {
                 .setColor(0xae00ff)
                 .addFields({ name: 'Von:', value: interaction.user.toString()})
                 .setTimestamp()
+
+                newTicket('einspruch',interaction.user.id, 'Rennvorfall', interaction)
             }
             
         }
