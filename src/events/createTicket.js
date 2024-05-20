@@ -1,8 +1,8 @@
 const { ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, UserSelectMenuBuilder, AttachmentBuilder} = require("discord.js");
-const loadSettings = require("../functions/loadSettings");
 const fs = require('fs');
+const getGuild = require("../modules/getGuild");
 
-let ticketCount = 0;
+let ticketCount;
 let TicketOpenEmbed;
 let newChannel;
 
@@ -224,6 +224,7 @@ module.exports = {
 }
 
 async function newTicket(reason, initiator, notificationRole, interaction) {
+    ticketCount = await getGuild(interaction.guildId).then(data => data.ticketCount);
     console.log("New Ticket");
     const settings = loadSettings(interaction.guildId);
     let notRole;

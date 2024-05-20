@@ -4,9 +4,6 @@ const getGuild = require("./getGuild");
 module.exports = async (client, guildId) => {
     try {
         const GuildData = await getGuild(guildId);
-
-        
-        console.log(GuildData);
         
         if (!GuildData || !GuildData.numbers) {
             console.error('Guild data or number channel not found');

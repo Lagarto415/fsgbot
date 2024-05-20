@@ -18,13 +18,6 @@ module.exports = {
         catch(error){
             console.log("Database Connection failed: ",error);
         }
-        try{
-            await updateNumbermessage(client, interaction)
-            console.log("Successfully updated number message");
-        }
-        catch{
-            console.log("Failed to update number message");
-        }
 
         try {
             await client.user.setActivity({

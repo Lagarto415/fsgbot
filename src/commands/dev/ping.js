@@ -15,6 +15,6 @@ module.exports = {
             .setTimestamp()
             .setFooter({ text: 'Ping' });
 
-        await interaction.editReply({ embeds: [embed], ephemeral: false });
+        await interaction.editReply({ content: null, embeds: [embed], ephemeral: false });
     }
 }

@@ -1,12 +1,11 @@
-// backend.js
-
 const express = require('express');
 const mysql = require('mysql2/promise');
 const bodyParser = require('body-parser');
 const app = express();
-const port = process.env.DBPORT; // Port where the backend server will listen
+const port = process.env.DBPORT || 3000; // Default to 3000 if DBPORT is not set
 
 app.use(bodyParser.json()); // Middleware to parse JSON bodies
+
 // MySQL connection configuration
 const pool = mysql.createPool({
   host: '185.166.39.80',
@@ -23,6 +22,30 @@ module.exports = {
   once: true,
 
   async execute() {
+    app.get('/fsg/tracks', async (req, res) => {
+      try {
+        const [results] = await pool.query('SELECT * FROM tracks');
+        
+        if (results.length === 0) {
+          console.log('No tracks found.'); // Log if no results
+        }
+
+        const transformedResponse = results.reduce((acc, track) => {
+          acc[track.Country] = {
+            emoji: track.Emoji,
+            trackImage: track.TrackImage
+          };
+          return acc;
+        }, {});
+
+        res.json(transformedResponse);
+      } catch (error) {
+        console.error('Failed to retrieve tracks:', error);
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    });
+    
+    // Additional route handlers for other endpoints
     app.get('/fsg/data', async (req, res) => {
       const sql = `SELECT
           driver.number,
@@ -37,7 +60,7 @@ module.exports = {
           team ON driver.teamId = team.id
       ORDER BY
           driver.number;
-      `
+      `;
       try {
         const [results] = await pool.query(sql);
         res.json(results);
@@ -46,7 +69,7 @@ module.exports = {
         res.status(500).json({ error: 'Internal server error' });
       }
     });
-
+    
     app.get('/fsg/:guildId', async (req, res) => {
       const { guildId } = req.params;
       try {
@@ -57,7 +80,7 @@ module.exports = {
         res.status(500).json({ error: 'Internal server error' });
       }
     });
-
+    
     app.put('/fsg/numberId/:messageId', async (req, res) => {
       const { messageId } = req.params;
       const { guildId } = req.body;
@@ -68,22 +91,19 @@ module.exports = {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
       }
-    });    
+    });
     
     app.put('/fsg/update/:number', async (req, res) => {
       const { number } = req.params;
       const { name, discordId, team } = req.body;
     
-      // Ensure all required fields are provided
       if (!name || !discordId || !team) {
         return res.status(400).json({ error: 'Name, Discord ID, and Team are required.' });
       }
     
-      // Normalize the team name
       const normalizedTeamName = normalizeTeamName(team);
     
       try {
-        // Get the team ID based on the normalized team name
         const [teamRows] = await pool.query(
           `SELECT id FROM team WHERE REPLACE(name, ' ', '') = ?`,
           [normalizedTeamName]
@@ -95,7 +115,6 @@ module.exports = {
     
         const teamId = teamRows[0].id;
     
-        // Update the driver's information
         const [result] = await pool.query(
           `UPDATE driver SET name = ?, discordId = ?, teamId = ? WHERE number = ?`,
           [name, discordId, teamId, number]
@@ -120,40 +139,38 @@ module.exports = {
       let { teamName } = req.params;
       teamName = normalizeTeamName(teamName);
     
-      // Respond if the normalized team name is "Ersatzfahrer" or "Kommentator"
       if (teamName === "Ersatzfahrer" || teamName === "Kommentator") {
-          return res.send(true);
+        return res.send(true);
       }
     
       try {
-          const [rows] = await pool.query(
-              `SELECT 
-                  team.name AS team_name,
-                  COUNT(driver.number) AS driverCount
-               FROM 
-                  driver
-               JOIN 
-                  team ON driver.teamId = team.id
-               WHERE 
-                  REPLACE(team.name, ' ', '') = ?
-               GROUP BY 
-                  team.name`,
-              [teamName]
-          );
-          
-          // If the team doesn't exist or has no drivers, we can assume it's free.
-          if (rows.length === 0) {
-              return res.send(true);
-          }
-          
-          const driverCount = rows[0].driverCount;
-          res.send(driverCount < 2);
+        const [rows] = await pool.query(
+          `SELECT 
+              team.name AS team_name,
+              COUNT(driver.number) AS driverCount
+           FROM 
+              driver
+           JOIN 
+              team ON driver.teamId = team.id
+           WHERE 
+              REPLACE(team.name, ' ', '') = ?
+           GROUP BY 
+              team.name`,
+          [teamName]
+        );
+    
+        if (rows.length === 0) {
+          return res.send(true);
+        }
+    
+        const driverCount = rows[0].driverCount;
+        res.send(driverCount < 2);
       } catch (error) {
-          console.error('Failed to retrieve team count:', error);
-          res.status(500).json({ error: 'Internal server error' });
+        console.error('Failed to retrieve team count:', error);
+        res.status(500).json({ error: 'Internal server error' });
       }
     });
-
+    
     app.put('/fsg/setup/:guildId', async (req, res) => {
       const { guildId } = req.params;
       const { welcome, leave, modLog, socials, rules, application, numbers } = req.body;
@@ -174,17 +191,13 @@ module.exports = {
         res.status(500).json({ error: 'Internal server error' });
       }
     });
-
+    
+    
     app.listen(port, () => {
-      console.log(`Backend server running on port ${port}`);
+      console.log(`Backend server running on http://localhost:${port}/fsg/`);
     });
     
-    // Keep the process running
     process.on('uncaughtException', (err) => {
       console.error('There was an uncaught error', err);
-      // Handle the error safely
     });
-  }
-
-}
-
+}}
