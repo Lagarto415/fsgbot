@@ -1,0 +1,31 @@
+{
+  "dependencies": {
+    "@discordjs/builders": "^1.8.1",
+    "@discordjs/rest": "^2.3.0",
+    "axios": "^1.6.8",
+    "body-parser": "^1.20.2",
+    "discord-api-types": "^0.37.84",
+    "discord.js": "^14.15.2",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "fs": "^0.0.1-security",
+    "lodash": "^4.17.21",
+    "moment-timezone": "^0.5.45",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.9.7",
+    "node-fetch": "^3.3.2",
+    "path": "^0.12.7",
+    "pm2": "^5.3.1",
+    "rest": "^2.0.0"
+  },
+  "name": "bot",
+  "version": "1.0.0",
+  "main": "src/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
