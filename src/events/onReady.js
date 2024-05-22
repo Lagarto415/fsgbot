@@ -29,7 +29,7 @@ module.exports = {
 
         // Function to set presence
         function setPresence() {
-            const option = currentIndex % driverList.length;
+            const option = Math.random() * driverList.length | 0;
             const { status, type, name } = statusArray[currentIndex % statusArray.length];
 
             try {
