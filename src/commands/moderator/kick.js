@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, AttachmentBuilder } = require('discord.js')
-const settings = require('../../../oldbot/src/settings.json')
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, AttachmentBuilder } = require('discord.js');
+const getGuild = require('../../modules/getGuild');
 
 
 module.exports = {
@@ -13,7 +13,7 @@ module.exports = {
     async execute(interaction, client){
         const guildId = interaction.guildId
         const warningFile = new AttachmentBuilder('./src/images/warning.png');
-        const modlog = settings[guildId].channels.modlog
+        const modlog = await getGuild(guildId).then(data => data.modLog);
         const channel = client.channels.cache.get(modlog)
         const targetUser = interaction.options.getUser('user')
         const reason = interaction.options.getString('reason') || 'no reason provided'
@@ -33,6 +33,5 @@ module.exports = {
         await memberToKick.kick(reason);
         await interaction.reply({ content: `${targetUser.tag} wurde gekickt.`, ephemeral: true });
         await channel.send({ embeds: [embed], files: [warningFile] });
-
     }
 }
