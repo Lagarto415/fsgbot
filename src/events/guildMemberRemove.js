@@ -1,12 +1,10 @@
 const { EmbedBuilder } = require("discord.js");
-const loadSettings = require("../functions/loadSettings");
-const updateDriver = require("../backend/uploadToDB");
-
-
+const updateNumbermessage = require("../modules/updateNumbermessage");
+const updateDriver = require("../modules/updateDriver");
+const getGuild = require("../modules/getGuild");
 module.exports = {
     name: 'guildMemberRemove',
     async execute (member, client) {
-        const updateNumbermessage = require("../functions/updateNumbermessage")(client);
         console.log(`Member ${member.user.username} left the Server!`);
         
         try {
@@ -15,14 +13,15 @@ module.exports = {
             console.log(`Number extracted: ${number}`); // Debugging line to check the extracted number
 
             // Ensure updateDriver is awaited so errors within it are properly caught
-            await updateDriver(number, null, null, null);
-            await updateNumbermessage(member.guild.id);
+            await updateDriver({number: number, name: null, discordId: null, teamId: null});
+            updateDriver
+            updateNumbermessage;
         } catch (err) {
             console.error("Error processing member departure:", err);
         }
 
-        const guildSettings = loadSettings(member.guild.id);
-        const leaveChannelId = guildSettings.channels.goodbye;
+        const guildSettings = await getGuild(member.guild.id);
+        const leaveChannelId = guildSettings.leave;
 
         const channel = await member.guild.channels.fetch(leaveChannelId).catch(console.error);
 
@@ -30,6 +29,7 @@ module.exports = {
             console.log("Leave channel not found.");
             return;
         }
+        await updateNumbermessage(client, member.guild.id);
 
         const embed = new EmbedBuilder()
             .setTitle('Bye bye')

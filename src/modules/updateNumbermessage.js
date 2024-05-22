@@ -10,7 +10,6 @@ module.exports = async (client, guildId) => {
             return;
         }
 
-
         const numberchannel = client.channels.cache.get(GuildData.numbers);
         
         if (!numberchannel) {

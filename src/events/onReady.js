@@ -1,18 +1,17 @@
+const { ActivityType } = require('discord.js');
 const backend = require('../backend/backend');
 const getData = require('../modules/getData');
-// const ttvNotify = require('../modules/ttvNotify')
-// const ytNotify = require('../modules/ytNotify')
 
 module.exports = {
     name: 'ready',
     once: true,
     async execute(client) {
-        if(!backend) return;
+        if (!backend) return;
 
         try {
             await backend.execute();
             console.log("Database Connection successful");
-        } catch(error) {
+        } catch (error) {
             console.log("Database Connection failed: ", error);
         }
 
@@ -21,21 +20,35 @@ module.exports = {
 
         console.log(`Successfully logged in as: ${client.user.tag}`);
 
-        let randomDriver = String(getRandomDriver(driverList));
+        // Define an array of statuses
+        const statusArray = [
+            { status: "online", type: ActivityType.Watching, name: "beim Fahren zu" },
+        ];
 
-        try {
-            await client.user.setActivity({
-                name: `${randomDriver} beim Kurvenschneiden`,
-                type: 'WATCHING'
-            });
-            console.log("Presence set successfully: " + randomDriver);
-        } catch (error) {
-            console.error("Error updating presence:", error);
+        let currentIndex = 0;
+
+        // Function to set presence
+        function setPresence() {
+            const option = currentIndex % driverList.length;
+            const { status, type, name } = statusArray[currentIndex % statusArray.length];
+
+            try {
+                client.user.setPresence({
+                    activities: [{name:`${driverList[option]} ${name}`, type: type }],
+                    status: status
+                });
+                currentIndex++;
+            } catch (error) {
+                console.error(error);
+            }
         }
+
+        // Initial presence
+        setPresence();
+
+        // Set presence every minute
+        setInterval(() => {
+            setPresence();
+        }, 60000);
     }
 };
-
-function getRandomDriver(driverList) {
-    const randomIndex = Math.floor(Math.random() * driverList.length);
-    return driverList[randomIndex];
-}

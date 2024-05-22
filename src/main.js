@@ -10,6 +10,7 @@ const client = new Client ({
         IntentsBitField.Flags.MessageContent,
         IntentsBitField.Flags.GuildMembers,
         IntentsBitField.Flags.GuildPresences,
+        IntentsBitField.Flags.GuildMembers,
     ],
     partials: [Partials.Message, Partials.Channel]
 })
