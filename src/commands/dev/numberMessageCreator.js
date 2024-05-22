@@ -11,7 +11,7 @@ module.exports = {
     async execute(interaction, client) {
         const allData = await getData()
         const GuildData = await getGuild(interaction.guildId)
-        const numberchannel = client.channels.cache.get(GuildData.data.numbers);
+        const numberchannel = client.channels.cache.get(GuildData.numbers);
         let numberMessage = '';
 
         for (let i = 1; i <= 99; i++) {

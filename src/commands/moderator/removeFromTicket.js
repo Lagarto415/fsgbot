@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
-const loadSettings = require('../../functions/loadSettings');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const getGuild = require('../../modules/getGuild');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -7,9 +7,10 @@ module.exports = {
     .setDescription('Entfernt einen User aus dem Ticket')
     .addUserOption(option => option.setName('user').setDescription('user').setRequired(true)),
 
-    async execute(interaction, client) {
+    async execute(interaction) {
+        const GuildData = await getGuild(interaction.guildId);
 
-    if (interaction.channel.parent == loadSettings(interaction.guild.id).categories.ticketCategory) {
+    if (interaction.channel.parent == GuildData.ticketCategory) {
         const userToRemove = interaction.options.getUser('user');
         const ticketChannel = interaction.channel;
 

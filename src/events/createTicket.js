@@ -1,6 +1,7 @@
 const { ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, UserSelectMenuBuilder, AttachmentBuilder} = require("discord.js");
 const fs = require('fs');
 const getGuild = require("../modules/getGuild");
+const updateTicketCount = require("../modules/updateTicketCount");
 
 let ticketCount;
 let TicketOpenEmbed;
@@ -10,10 +11,10 @@ module.exports = {
     name: "interactionCreate",
 
     async execute(interaction, client) {
-        const settings = loadSettings(interaction.guildId);
-        const fiaRole = settings.roles.fia;
-        const adminRole = settings.roles.admin;
-        const ModLog =  client.channels.cache.get(settings.channels.modlog);
+        const guildData = await getGuild(interaction.guildId);
+        const fiaRole = guildData.modRoles[1].discordId;
+        const adminRole = guildData.modRoles[0].discordId;
+        const ModLog =  client.channels.cache.get(guildData.modLog);
         const warningFile = new AttachmentBuilder('./src/images/warning.png');
         
         if (!interaction.isButton() && !interaction.isStringSelectMenu() && !interaction.isUserSelectMenu()) return; 
@@ -225,31 +226,27 @@ module.exports = {
 
 async function newTicket(reason, initiator, notificationRole, interaction) {
     ticketCount = await getGuild(interaction.guildId).then(data => data.ticketCount);
+    const guildData = await getGuild(interaction.guildId);
     console.log("New Ticket");
-    const settings = loadSettings(interaction.guildId);
     let notRole;
 
     switch (notificationRole) {
         case "Adminkontakt":
-            notRole = settings.roles.admin;
+            notRole = guildData.modRoles[0].discordId;
             break;
         case "Rennvorfall":
-            notRole = settings.roles.fia;
+            notRole = guildData.modRoles[1].discordId;
             break;
         default:
             console.log("No notification role found");
     }
 
     try {
-        const data = await fs.promises.readFile('./src/data/ticket_counter.json', 'utf8');
-        const counterData = JSON.parse(data);
-        let ticketCount = counterData.count; 
-
         ticketCount++;
         newChannel = await interaction.guild.channels.create({
             name: `${ticketCount} - ${interaction.user.displayName} - ${reason}`,
             type: ChannelType.GuildText,
-            parent: settings.categories.ticketCategory,
+            parent: guildData.ticketCategory,
             permissionOverwrites: [
                 {
                     id: initiator,
@@ -266,7 +263,7 @@ async function newTicket(reason, initiator, notificationRole, interaction) {
             ]
         })
         await interaction.deferUpdate();
-        await fs.promises.writeFile('./src/data/ticket_counter.json', JSON.stringify({ count: ticketCount }));
+        await updateTicketCount({guildId: interaction.guildId, ticketCount: ticketCount});
 
     } catch (err) { 
         console.error(err);

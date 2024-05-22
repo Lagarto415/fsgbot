@@ -73,13 +73,43 @@ module.exports = {
     app.get('/fsg/:guildId', async (req, res) => {
       const { guildId } = req.params;
       try {
-        const [results] = await pool.query('SELECT * FROM guild WHERE guildId = ?', [guildId]);
-        res.json(results[0]);
+        // Retrieve all necessary data
+        const [results] = await pool.query(
+          `SELECT 
+             g.*, 
+             m.name AS modRoleName, 
+             m.discordId AS modRoleDiscordId 
+           FROM guild g 
+           LEFT JOIN modRoles m ON g.guildId = m.guildId 
+           WHERE g.guildId = ?`,
+          [guildId]
+        );
+    
+        // Check if results exist
+        if (results.length === 0) {
+          return res.status(404).json({ error: 'Guild not found' });
+        }
+    
+        // Structure the data
+        const guild = {
+          ...results[0], // Spread the first guild result for base properties
+          modRoles: results.map(row => ({
+            name: row.modRoleName,
+            discordId: row.modRoleDiscordId
+          })).filter(modRole => modRole.name && modRole.discordId) // Filter out rows with no modRoles
+        };
+    
+        // Remove the duplicated modRole fields from the base guild object
+        delete guild.modRoleName;
+        delete guild.modRoleDiscordId;
+    
+        res.json(guild);
       } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
       }
     });
+    
     
     app.put('/fsg/numberId/:messageId', async (req, res) => {
       const { messageId } = req.params;
@@ -130,6 +160,19 @@ module.exports = {
         res.status(500).json({ error: 'Internal server error' });
       }
     });
+
+    app.put('/fsg/ticketCount/:guildId', async (req, res) => {
+      const { guildId } = req.params;
+      const { ticketCount } = req.body;
+
+      try {
+        const [results] = await pool.query('UPDATE guild SET ticketCount = ? WHERE guildId = ?', [ticketCount, guildId]);
+        res.json(results);
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    })
     
     const normalizeTeamName = (string) => {
       return string.replace(/\s+/g, '').charAt(0).toUpperCase() + string.replace(/\s+/g, '').slice(1).toLowerCase();
